@@ -30,9 +30,11 @@
 <p>To play this game, you will need some form of Atari 2600 emulator (unless you have a real machine and a harmony cart). 
 The binaries are in ./bin/</p>
 
-<p>This game is about some guy who is lost on a planet with a lot of monsters. They have already send him a space ship to rescue him, but he don't know when it is going to land, nor where it is going to land. Maybe the space ship has already landed? Maybe it is already gone?
- He need to find the space ship on time before the crew think he is lost forever. He hears the time tick in his head...
- But he has also to defend himself from the different monsters that this land is rich. And the land is so large, just finding the space ship is already going to be already a challenge! Has it landed in the forest, in the mountains, at the ruins of the ancient civilisation or near the endless ocean?</p>
+<p>This game is about some guy who is lost on a planet with a lot of monsters. They have already send him a space ship to rescue him, but he don't know when it is going to land, nor where it is going to land. Maybe the space ship has already landed? Maybe it is already gone?  </p>
+
+<p>He need to find the space ship on time before the crew think he is lost forever. He hears the time tick in his head...  </p>
+
+<p>But he has also to defend himself from the different monsters that this land is rich. And the land is so large, just finding the space ship is already going to be already a challenge! Has it landed in the forest, in the mountains, at the ruins of the ancient civilisation or near the endless ocean?</p>
 
 <p>(ain't Atari games  famous for their storyline...) </p>
 
@@ -75,14 +77,18 @@ where you replace "version" with your compiled version.</p>
 <a id="technical-details" class="anchor" href="#technical-details" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Technical Details</h2>
 
 <p>(maybe I'm going to put this in the wiki; but I don't have the time at the moment)
- You might wonder how it is possible that this game crams such a map in so little memory. In fact, while omitting the music and the timer, it fits perfectly in 2048 bytes of code, without using procedural generation, and that while I'm new at this platform and I didn't do much optimisations.
- The trick is that the game use a simple form of a tile-mapped storage &amp; kernel.
- 1 screen, represented as 8x6 tile images, is stored in 4 bytes. In fact, if you look well, you will see that there are some mirroring involved. With the extra/makemaptile.py tool (needs python and pygame!), you can experience by yourself how this mirroring works. The map is then stored as bits in 32 individual positions (4 bytesx8 bits), where a 1 represent a tile and a 0 represent no tile.
- There are 32 of these screens. In fact, you will often see the same screen, just with another texture!
- To determine which screen to load for the current position, the game looks-up in another table, 16x8 screens large. The lower 5 bits of 1 byte in this table represents the screen to load, the upper 2 bits gives the terrain type. This eats another 128 (16x8) bytes.
- This way, the game stores a 128x48 tilemap in just 256 bytes (not counting the code to load it). 
- There are other tricks involved in displaying this map (I'm really not using this hand-crafted kernel to it's max at the moment... maybe one day I will expand the 4K version to actually fits in 4096 bytes!) but I think most of them are piece of cake to seasoned Atari programmers. You will however see that because this game is turn-based, I did implement a custom-made sprite multiplexer without Flickering nor HMOVE bars!
- Finally, my code isn't the best; it repeats itself often, even outside the Kernel (look for the player-move code for an example; pure yuck!), and it is far from optimalised. Maybe someday I gonne fix the rough edges...</p>
+ You might wonder how it is possible that this game crams such a map in so little memory. In fact, while omitting the music and the timer, it fits perfectly in 2048 bytes of code, without using procedural generation, and that while I'm new at this platform and I didn't do much optimisations.  </p>
+
+<p>The trick is that the game use a simple form of a tile-mapped storage &amp; kernel.
+ 1 screen, represented as 8x6 tile images, is stored in 4 bytes. In fact, if you look well, you will see that there are some mirroring involved. With the extra/makemaptile.py tool (needs python and pygame!), you can experience by yourself how this mirroring works. The map is then stored as bits in 32 individual positions (4 bytesx8 bits), where a 1 represent a tile and a 0 represent no tile.  </p>
+
+<p>There are 32 of these screens. In fact, you will often see the same screen, just with another texture!
+ To determine which screen to load for the current position, the game looks-up in another table, 16x8 screens large. The lower 5 bits of 1 byte in this table represents the screen to load, the upper 2 bits gives the terrain type. This eats another 128 (16x8) bytes.  </p>
+
+<p>This way, the game stores a 128x48 tilemap in just 256 bytes (not counting the code to load it). 
+ There are other tricks involved in displaying this map (I'm really not using this hand-crafted kernel to it's max at the moment... maybe one day I will expand the 4K version to actually fits in 4096 bytes!) but I think most of them are piece of cake to seasoned Atari programmers. You will however see that because this game is turn-based, I did implement a custom-made sprite multiplexer without Flickering nor HMOVE bars!</p>
+
+<p>Finally, my code isn't the best; it repeats itself often, even outside the Kernel (look for the player-move code for an example; pure yuck!), and it is far from optimalised. Maybe someday I gonne fix the rough edges...</p>
 
 <p>P.S. I need to fix the Game aspect of the Game a little... for example the different monsters actually behave exactly the same! But I first need to shave some bytes off, I have none left for the 2k version.</p>
 
