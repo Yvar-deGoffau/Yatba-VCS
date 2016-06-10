@@ -42,20 +42,20 @@ The binaries are in ./bin/</p>
 <p>You will need the DASM assembler to build the project. The VCS.h and Macro.h files are already included, but you might want to get the latest version of them. </p>
 
 <p>You then need to modify the code at the top of the source file to build the right version:
-    processor 6502
-    include "vcs.h"
-    include "macro.h"
-    ;--------------------------------------
-    NTSC            = 0
-    PAL             = 1
-    COMPILE_VERSION = PAL   #Modify this line to "NTSC"/"PAL" to select your TV type
-    V2K     = 2
-    V4K     = 4
-    COMPILE_SIZE    = V2K   #Modify this line to "V2K"/"V4K" to select the 2K or the 4K version
-    ;--------------------------------------</p>
+    <code>processor 6502</code>
+    <code>include "vcs.h"</code>
+    <code>include "macro.h"</code>
+    <code>;--------------------------------------</code>
+    <code>NTSC            = 0</code>
+    <code>PAL             = 1</code>
+    <code>COMPILE_VERSION = PAL   #Modify this line to "NTSC"/"PAL" to select your TV type</code>
+    <code>V2K        = 2</code>
+    <code>V4K        = 4</code>
+    <code>COMPILE_SIZE    = V2K   #Modify this line to "V2K"/"V4K" to select the 2K or the 4K version</code>
+    <code>;--------------------------------------</code></p>
 
 <p>Then use the following command:
-    dasm.exe ./src/yatba.asm -s./src/yatba_version.sym -l./src/yatba_version.lst -f3 -o./bin/yatba_version.bin
+    <code>dasm.exe ./src/yatba.asm -s./src/yatba_version.sym -l./src/yatba_version.lst -f3 -o./bin/yatba_version.bin</code>
 where you replace "version" with your compiled version.</p>
 
 <p>Normally, I already supply precompiled versions in the ./bin/ folder. They should normally be working on any emulator. I don't guarantee however that it will work on the real console; I don't have the tools needed to test it. Any photos of real consoles running this game are welcome!</p>
