@@ -1,0 +1,2701 @@
+------- FILE yatba.asm LEVEL 1 PASS 2
+      1  10000					       processor	6502
+      2  10000 ????
+------- FILE vcs.h LEVEL 2 PASS 2
+      0  10000 ????				       include	"vcs.h"
+      1  10000 ????						; VCS.H
+      2  10000 ????						; Version 1.05, 13/November/2003
+      3  10000 ????
+      4  10000 ????		00 69	    VERSION_VCS =	105
+      5  10000 ????
+      6  10000 ????						; THIS IS A PRELIMINARY RELEASE OF *THE* "STANDARD" VCS.H
+      7  10000 ????						; THIS FILE IS EXPLICITLY SUPPORTED AS A DASM-PREFERRED COMPANION FILE
+      8  10000 ????						; PLEASE DO *NOT* REDISTRIBUTE THIS FILE!
+      9  10000 ????						;
+     10  10000 ????						; This file defines hardware registers and memory mapping for the
+     11  10000 ????						; Atari 2600. It is distributed as a companion machine-specific support package
+     12  10000 ????						; for the DASM compiler. Updates to this file, DASM, and associated tools are
+     13  10000 ????						; available at at http://www.atari2600.org/dasm
+     14  10000 ????						;
+     15  10000 ????						; Many thanks to the original author(s) of this file, and to everyone who has
+     16  10000 ????						; contributed to understanding the Atari 2600.  If you take issue with the
+     17  10000 ????						; contents, or naming of registers, please write to me (atari2600@taswegian.com)
+     18  10000 ????						; with your views.  Please contribute, if you think you can improve this
+     19  10000 ????						; file!
+     20  10000 ????						;
+     21  10000 ????						; Latest Revisions...
+     22  10000 ????						; 1.05  13/NOV/2003	  - Correction to 1.04 - now functions as requested by MR.
+     23  10000 ????						;			  - Added VERSION_VCS equate (which will reflect 100x version #)
+     24  10000 ????						;			    This will allow conditional code to verify VCS.H being
+     25  10000 ????						;			    used for code assembly.
+     26  10000 ????						; 1.04  12/NOV/2003	 Added TIA_BASE_WRITE_ADDRESS and TIA_BASE_READ_ADDRESS for
+     27  10000 ????						;			 convenient disassembly/reassembly compatibility for hardware
+     28  10000 ????						;			 mirrored reading/writing differences.	This is more a
+     29  10000 ????						;			 readability issue, and binary compatibility with disassembled
+     30  10000 ????						;			 and reassembled sources.  Per Manuel Rotschkar's suggestion.
+     31  10000 ????						; 1.03  12/MAY/2003	 Added SEG segment at end of file to fix old-code compatibility
+     32  10000 ????						;			 which was broken by the use of segments in this file, as
+     33  10000 ????						;			 reported by Manuel Polik on [stella] 11/MAY/2003
+     34  10000 ????						; 1.02  22/MAR/2003	 Added TIMINT($285)
+     35  10000 ????						; 1.01				Constant offset added to allow use for 3F-style bankswitching
+     36  10000 ????						;						 - define TIA_BASE_ADDRESS as $40 for Tigervision carts, otherwise
+     37  10000 ????						;						   it is safe to leave it undefined, and the base address will
+     38  10000 ????						;						   be set to 0.  Thanks to Eckhard Stolberg for the suggestion.
+     39  10000 ????						;			    Note, may use -DLABEL=EXPRESSION to define TIA_BASE_ADDRESS
+     40  10000 ????						;			  - register definitions are now generated through assignment
+     41  10000 ????						;			    in uninitialised segments.	This allows a changeable base
+     42  10000 ????						;			    address architecture.
+     43  10000 ????						; 1.0	22/MAR/2003		Initial release
+     44  10000 ????
+     45  10000 ????
+     46  10000 ????						;-------------------------------------------------------------------------------
+     47  10000 ????
+     48  10000 ????						; TIA_BASE_ADDRESS
+     49  10000 ????						; The TIA_BASE_ADDRESS defines the base address of access to TIA registers.
+     50  10000 ????						; Normally 0, the base address should (externally, before including this file)
+     51  10000 ????						; be set to $40 when creating 3F-bankswitched (and other?) cartridges.
+     52  10000 ????						; The reason is that this bankswitching scheme treats any access to locations
+     53  10000 ????						; < $40 as a bankswitch.
+     54  10000 ????
+     55  10000 ????			   -	       IFNCONST	TIA_BASE_ADDRESS
+     56  10000 ????			   -TIA_BASE_ADDRESS =	0
+     57  10000 ????				       ENDIF
+     58  10000 ????
+     59  10000 ????						; Note: The address may be defined on the command-line using the -D switch, eg:
+     60  10000 ????						; dasm.exe code.asm -DTIA_BASE_ADDRESS=$40 -f3 -v5 -ocode.bin
+     61  10000 ????						; *OR* by declaring the label before including this file, eg:
+     62  10000 ????						; TIA_BASE_ADDRESS = $40
+     63  10000 ????						;   include "vcs.h"
+     64  10000 ????
+     65  10000 ????						; Alternate read/write address capability - allows for some disassembly compatibility
+     66  10000 ????						; usage ; to allow reassembly to binary perfect copies).  This is essentially catering
+     67  10000 ????						; for the mirrored ROM hardware registers.
+     68  10000 ????
+     69  10000 ????						; Usage: As per above, define the TIA_BASE_READ_ADDRESS and/or TIA_BASE_WRITE_ADDRESS
+     70  10000 ????						; using the -D command-line switch, as required.  If the addresses are not defined,
+     71  10000 ????						; they defaut to the TIA_BASE_ADDRESS.
+     72  10000 ????
+     73  10000 ????			   -	       IFNCONST	TIA_BASE_READ_ADDRESS
+     74  10000 ????			   -TIA_BASE_READ_ADDRESS =	TIA_BASE_ADDRESS
+     75  10000 ????				       ENDIF
+     76  10000 ????
+     77  10000 ????			   -	       IFNCONST	TIA_BASE_WRITE_ADDRESS
+     78  10000 ????			   -TIA_BASE_WRITE_ADDRESS =	TIA_BASE_ADDRESS
+     79  10000 ????				       ENDIF
+     80  10000 ????
+     81  10000 ????						;-------------------------------------------------------------------------------
+     82  10000 ????
+     83 U002d ????				      SEG.U	TIA_REGISTERS_WRITE
+     84 U0000					      ORG	TIA_BASE_WRITE_ADDRESS
+     85 U0000
+     86 U0000							; DO NOT CHANGE THE RELATIVE ORDERING OF REGISTERS!
+     87 U0000
+     88 U0000		       00	   VSYNC      ds	1	; $00	 0000 00x0   Vertical Sync Set-Clear
+     89 U0001		       00	   VBLANK     ds	1	; $01	 xx00 00x0   Vertical Blank Set-Clear
+     90 U0002		       00	   WSYNC      ds	1	; $02	 ---- ----   Wait for Horizontal Blank
+     91 U0003		       00	   RSYNC      ds	1	; $03	 ---- ----   Reset Horizontal Sync Counter
+     92 U0004		       00	   NUSIZ0     ds	1	; $04	 00xx 0xxx   Number-Size player/missle 0
+     93 U0005		       00	   NUSIZ1     ds	1	; $05	 00xx 0xxx   Number-Size player/missle 1
+     94 U0006		       00	   COLUP0     ds	1	; $06	 xxxx xxx0   Color-Luminance Player 0
+     95 U0007		       00	   COLUP1     ds	1	; $07	 xxxx xxx0   Color-Luminance Player 1
+     96 U0008		       00	   COLUPF     ds	1	; $08	 xxxx xxx0   Color-Luminance Playfield
+     97 U0009		       00	   COLUBK     ds	1	; $09	 xxxx xxx0   Color-Luminance Background
+     98 U000a		       00	   CTRLPF     ds	1	; $0A	 00xx 0xxx   Control Playfield, Ball, Collisions
+     99 U000b		       00	   REFP0      ds	1	; $0B	 0000 x000   Reflection Player 0
+    100 U000c		       00	   REFP1      ds	1	; $0C	 0000 x000   Reflection Player 1
+    101 U000d		       00	   PF0	      ds	1	; $0D	 xxxx 0000   Playfield Register Byte 0
+    102 U000e		       00	   PF1	      ds	1	; $0E	 xxxx xxxx   Playfield Register Byte 1
+    103 U000f		       00	   PF2	      ds	1	; $0F	 xxxx xxxx   Playfield Register Byte 2
+    104 U0010		       00	   RESP0      ds	1	; $10	 ---- ----   Reset Player 0
+    105 U0011		       00	   RESP1      ds	1	; $11	 ---- ----   Reset Player 1
+    106 U0012		       00	   RESM0      ds	1	; $12	 ---- ----   Reset Missle 0
+    107 U0013		       00	   RESM1      ds	1	; $13	 ---- ----   Reset Missle 1
+    108 U0014		       00	   RESBL      ds	1	; $14	 ---- ----   Reset Ball
+    109 U0015		       00	   AUDC0      ds	1	; $15	 0000 xxxx   Audio Control 0
+    110 U0016		       00	   AUDC1      ds	1	; $16	 0000 xxxx   Audio Control 1
+    111 U0017		       00	   AUDF0      ds	1	; $17	 000x xxxx   Audio Frequency 0
+    112 U0018		       00	   AUDF1      ds	1	; $18	 000x xxxx   Audio Frequency 1
+    113 U0019		       00	   AUDV0      ds	1	; $19	 0000 xxxx   Audio Volume 0
+    114 U001a		       00	   AUDV1      ds	1	; $1A	 0000 xxxx   Audio Volume 1
+    115 U001b		       00	   GRP0       ds	1	; $1B	 xxxx xxxx   Graphics Register Player 0
+    116 U001c		       00	   GRP1       ds	1	; $1C	 xxxx xxxx   Graphics Register Player 1
+    117 U001d		       00	   ENAM0      ds	1	; $1D	 0000 00x0   Graphics Enable Missle 0
+    118 U001e		       00	   ENAM1      ds	1	; $1E	 0000 00x0   Graphics Enable Missle 1
+    119 U001f		       00	   ENABL      ds	1	; $1F	 0000 00x0   Graphics Enable Ball
+    120 U0020		       00	   HMP0       ds	1	; $20	 xxxx 0000   Horizontal Motion Player 0
+    121 U0021		       00	   HMP1       ds	1	; $21	 xxxx 0000   Horizontal Motion Player 1
+    122 U0022		       00	   HMM0       ds	1	; $22	 xxxx 0000   Horizontal Motion Missle 0
+    123 U0023		       00	   HMM1       ds	1	; $23	 xxxx 0000   Horizontal Motion Missle 1
+    124 U0024		       00	   HMBL       ds	1	; $24	 xxxx 0000   Horizontal Motion Ball
+    125 U0025		       00	   VDELP0     ds	1	; $25	 0000 000x   Vertical Delay Player 0
+    126 U0026		       00	   VDELP1     ds	1	; $26	 0000 000x   Vertical Delay Player 1
+    127 U0027		       00	   VDELBL     ds	1	; $27	 0000 000x   Vertical Delay Ball
+    128 U0028		       00	   RESMP0     ds	1	; $28	 0000 00x0   Reset Missle 0 to Player 0
+    129 U0029		       00	   RESMP1     ds	1	; $29	 0000 00x0   Reset Missle 1 to Player 1
+    130 U002a		       00	   HMOVE      ds	1	; $2A	 ---- ----   Apply Horizontal Motion
+    131 U002b		       00	   HMCLR      ds	1	; $2B	 ---- ----   Clear Horizontal Move Registers
+    132 U002c		       00	   CXCLR      ds	1	; $2C	 ---- ----   Clear Collision Latches
+    133 U002d
+    134 U002d							;-------------------------------------------------------------------------------
+    135 U002d
+    136 U000e ????				      SEG.U	TIA_REGISTERS_READ
+    137 U0000					      ORG	TIA_BASE_READ_ADDRESS
+    138 U0000
+    139 U0000							;											bit 7	 bit 6
+    140 U0000		       00	   CXM0P      ds	1	; $00	     xx00 0000	     Read Collision  M0-P1   M0-P0
+    141 U0001		       00	   CXM1P      ds	1	; $01	     xx00 0000			     M1-P0   M1-P1
+    142 U0002		       00	   CXP0FB     ds	1	; $02	     xx00 0000			     P0-PF   P0-BL
+    143 U0003		       00	   CXP1FB     ds	1	; $03	     xx00 0000			     P1-PF   P1-BL
+    144 U0004		       00	   CXM0FB     ds	1	; $04	     xx00 0000			     M0-PF   M0-BL
+    145 U0005		       00	   CXM1FB     ds	1	; $05	     xx00 0000			     M1-PF   M1-BL
+    146 U0006		       00	   CXBLPF     ds	1	; $06	     x000 0000			     BL-PF   -----
+    147 U0007		       00	   CXPPMM     ds	1	; $07	     xx00 0000			     P0-P1   M0-M1
+    148 U0008		       00	   INPT0      ds	1	; $08	     x000 0000	     Read Pot Port 0
+    149 U0009		       00	   INPT1      ds	1	; $09	     x000 0000	     Read Pot Port 1
+    150 U000a		       00	   INPT2      ds	1	; $0A	     x000 0000	     Read Pot Port 2
+    151 U000b		       00	   INPT3      ds	1	; $0B	     x000 0000	     Read Pot Port 3
+    152 U000c		       00	   INPT4      ds	1	; $0C		x000 0000	 Read Input (Trigger) 0
+    153 U000d		       00	   INPT5      ds	1	; $0D		x000 0000	 Read Input (Trigger) 1
+    154 U000e
+    155 U000e							;-------------------------------------------------------------------------------
+    156 U000e
+    157 U0298 ????				      SEG.U	RIOT
+    158 U0280					      ORG	$280
+    159 U0280
+    160 U0280							; RIOT MEMORY MAP
+    161 U0280
+    162 U0280		       00	   SWCHA      ds	1	; $280      Port A data register for joysticks:
+    163 U0281							;			Bits 4-7 for player 1.  Bits 0-3 for player 2.
+    164 U0281
+    165 U0281		       00	   SWACNT     ds	1	; $281      Port A data direction register (DDR)
+    166 U0282		       00	   SWCHB      ds	1	; $282		Port B data (console switches)
+    167 U0283		       00	   SWBCNT     ds	1	; $283      Port B DDR
+    168 U0284		       00	   INTIM      ds	1	; $284		Timer output
+    169 U0285
+    170 U0285		       00	   TIMINT     ds	1	; $285
+    171 U0286
+    172 U0286							; Unused/undefined registers ($285-$294)
+    173 U0286
+    174 U0286		       00		      ds	1	; $286
+    175 U0287		       00		      ds	1	; $287
+    176 U0288		       00		      ds	1	; $288
+    177 U0289		       00		      ds	1	; $289
+    178 U028a		       00		      ds	1	; $28A
+    179 U028b		       00		      ds	1	; $28B
+    180 U028c		       00		      ds	1	; $28C
+    181 U028d		       00		      ds	1	; $28D
+    182 U028e		       00		      ds	1	; $28E
+    183 U028f		       00		      ds	1	; $28F
+    184 U0290		       00		      ds	1	; $290
+    185 U0291		       00		      ds	1	; $291
+    186 U0292		       00		      ds	1	; $292
+    187 U0293		       00		      ds	1	; $293
+    188 U0294
+    189 U0294		       00	   TIM1T      ds	1	; $294		set 1 clock interval
+    190 U0295		       00	   TIM8T      ds	1	; $295      set 8 clock interval
+    191 U0296		       00	   TIM64T     ds	1	; $296      set 64 clock interval
+    192 U0297		       00	   T1024T     ds	1	; $297      set 1024 clock interval
+    193 U0298
+    194 U0298							;-------------------------------------------------------------------------------
+    195 U0298							; The following required for back-compatibility with code which does not use
+    196 U0298							; segments.
+    197 U0298
+    198  10000 ????				       SEG
+    199  10000 ????
+    200  10000 ????						; EOF
+------- FILE yatba.asm
+      4  10000 ????
+------- FILE macro.h LEVEL 2 PASS 2
+      0  10000 ????				       include	"macro.h"
+      1  10000 ????						; MACRO.H
+      2  10000 ????						; Version 1.05, 13/NOVEMBER/2003
+      3  10000 ????
+      4  10000 ????		00 69	    VERSION_MACRO =	105
+      5  10000 ????
+      6  10000 ????						;
+      7  10000 ????						; THIS FILE IS EXPLICITLY SUPPORTED AS A DASM-PREFERRED COMPANION FILE
+      8  10000 ????						; PLEASE DO *NOT* REDISTRIBUTE MODIFIED VERSIONS OF THIS FILE!
+      9  10000 ????						;
+     10  10000 ????						; This file defines DASM macros useful for development for the Atari 2600.
+     11  10000 ????						; It is distributed as a companion machine-specific support package
+     12  10000 ????						; for the DASM compiler. Updates to this file, DASM, and associated tools are
+     13  10000 ????						; available at at http://www.atari2600.org/dasm
+     14  10000 ????						;
+     15  10000 ????						; Many thanks to the people who have contributed.  If you take issue with the
+     16  10000 ????						; contents, or would like to add something, please write to me
+     17  10000 ????						; (atari2600@taswegian.com) with your contribution.
+     18  10000 ????						;
+     19  10000 ????						; Latest Revisions...
+     20  10000 ????						;
+     21  10000 ????						; 1.05  14/NOV/2003	  - Added VERSION_MACRO equate (which will reflect 100x version #)
+     22  10000 ????						;			    This will allow conditional code to verify MACRO.H being
+     23  10000 ????						;			    used for code assembly.
+     24  10000 ????						; 1.04  13/NOV/2003	 - SET_POINTER macro added (16-bit address load)
+     25  10000 ????						;
+     26  10000 ????						; 1.03  23/JUN/2003	 - CLEAN_START macro added - clears TIA, RAM, registers
+     27  10000 ????						;
+     28  10000 ????						; 1.02  14/JUN/2003	 - VERTICAL_SYNC macro added
+     29  10000 ????						;			   (standardised macro for vertical synch code)
+     30  10000 ????						; 1.01  22/MAR/2003	 - SLEEP macro added.
+     31  10000 ????						;			 - NO_ILLEGAL_OPCODES switch implemented
+     32  10000 ????						; 1.0	22/MAR/2003		Initial release
+     33  10000 ????
+     34  10000 ????						; Note: These macros use illegal opcodes.  To disable illegal opcode usage,
+     35  10000 ????						;   define the symbol NO_ILLEGAL_OPCODES (-DNO_ILLEGAL_OPCODES=1 on command-line).
+     36  10000 ????						;   If you do not allow illegal opcode usage, you must include this file
+     37  10000 ????						;   *after* including VCS.H (as the non-illegal opcodes access hardware
+     38  10000 ????						;   registers and require them to be defined first).
+     39  10000 ????
+     40  10000 ????						; Available macros...
+     41  10000 ????						;   SLEEP n		 - sleep for n cycles
+     42  10000 ????						;   VERTICAL_SYNC	 - correct 3 scanline vertical synch code
+     43  10000 ????						;   CLEAN_START	 - set machine to known state on startup
+     44  10000 ????						;   SET_POINTER	 - load a 16-bit absolute to a 16-bit variable
+     45  10000 ????
+     46  10000 ????						;-------------------------------------------------------------------------------
+     47  10000 ????						; SLEEP duration
+     48  10000 ????						; Original author: Thomas Jentzsch
+     49  10000 ????						; Inserts code which takes the specified number of cycles to execute.	This is
+     50  10000 ????						; useful for code where precise timing is required.
+     51  10000 ????						; ILLEGAL-OPCODE VERSION DOES NOT AFFECT FLAGS OR REGISTERS.
+     52  10000 ????						; LEGAL OPCODE VERSION MAY AFFECT FLAGS
+     53  10000 ????						; Uses illegal opcode (DASM 2.20.01 onwards).
+     54  10000 ????
+     55  10000 ????				       MAC	sleep
+     56  10000 ????			    .CYCLES    SET	{1}
+     57  10000 ????
+     58  10000 ????				       IF	.CYCLES < 2
+     59  10000 ????				       ECHO	"MACRO ERROR: 'SLEEP': Duration must be > 1"
+     60  10000 ????				       ERR
+     61  10000 ????				       ENDIF
+     62  10000 ????
+     63  10000 ????				       IF	.CYCLES & 1
+     64  10000 ????				       IFNCONST	NO_ILLEGAL_OPCODES
+     65  10000 ????				       nop	0
+     66  10000 ????				       ELSE
+     67  10000 ????				       bit	VSYNC
+     68  10000 ????				       ENDIF
+     69  10000 ????			    .CYCLES    SET	.CYCLES - 3
+     70  10000 ????				       ENDIF
+     71  10000 ????
+     72  10000 ????				       REPEAT	.CYCLES / 2
+     73  10000 ????				       nop
+     74  10000 ????				       REPEND
+     75  10000 ????				       ENDM		;usage: SLEEP n (n>1)
+     76  10000 ????
+     77  10000 ????						;-------------------------------------------------------------------------------
+     78  10000 ????						; VERTICAL_SYNC
+     79  10000 ????						; Original author: Manuel Polik
+     80  10000 ????						; Inserts the code required for a proper 3 scannline
+     81  10000 ????						; vertical sync sequence
+     82  10000 ????						;
+     83  10000 ????						; Note: Alters the accumulator
+     84  10000 ????						;
+     85  10000 ????						; IN:
+     86  10000 ????						; OUT: A = 1
+     87  10000 ????
+     88  10000 ????				       MAC	vertical_sync
+     89  10000 ????				       LDA	#$02	; A = VSYNC enable
+     90  10000 ????				       STA	WSYNC	; Finish current line
+     91  10000 ????				       STA	VSYNC	; Start vertical sync
+     92  10000 ????				       STA	WSYNC	; 1st line vertical sync
+     93  10000 ????				       STA	WSYNC	; 2nd line vertical sync
+     94  10000 ????				       LSR		; A = VSYNC disable
+     95  10000 ????				       STA	WSYNC	; 3rd line vertical sync
+     96  10000 ????				       STA	VSYNC	; Stop vertical sync
+     97  10000 ????				       ENDM
+     98  10000 ????
+     99  10000 ????						;-------------------------------------------------------------------------------
+    100  10000 ????						; CLEAN_START
+    101  10000 ????						; Original author: Andrew Davie
+    102  10000 ????						; Standardised start-up code, clears stack, all TIA registers and RAM to 0
+    103  10000 ????						; Sets stack pointer to $FF, and all registers to 0
+    104  10000 ????						; Sets decimal mode off, sets interrupt flag (kind of un-necessary)
+    105  10000 ????						; Use as very first section of code on boot (ie: at reset)
+    106  10000 ????						; Code written to minimise total ROM usage - uses weird 6502 knowledge :)
+    107  10000 ????
+    108  10000 ????				       MAC	clean_start
+    109  10000 ????				       sei
+    110  10000 ????				       cld
+    111  10000 ????
+    112  10000 ????				       ldx	#0
+    113  10000 ????				       txa
+    114  10000 ????				       tay
+    115  10000 ????			    .CLEAR_STACK dex
+    116  10000 ????				       txs
+    117  10000 ????				       pha
+    118  10000 ????				       bne	.CLEAR_STACK	; SP=$FF, X = A = Y = 0
+    119  10000 ????
+    120  10000 ????				       ENDM
+    121  10000 ????
+    122  10000 ????						;-------------------------------------------------------
+    123  10000 ????						; SET_POINTER
+    124  10000 ????						; Original author: Manuel Rotschkar
+    125  10000 ????						;
+    126  10000 ????						; Sets a 2 byte RAM pointer to an absolute address.
+    127  10000 ????						;
+    128  10000 ????						; Usage: SET_POINTER pointer, address
+    129  10000 ????						; Example: SET_POINTER SpritePTR, SpriteData
+    130  10000 ????						;
+    131  10000 ????						; Note: Alters the accumulator, NZ flags
+    132  10000 ????						; IN 1: 2 byte RAM location reserved for pointer
+    133  10000 ????						; IN 2: absolute address
+    134  10000 ????
+    135  10000 ????				       MAC	set_pointer
+    136  10000 ????			    .POINTER   SET	{1}
+    137  10000 ????			    .ADDRESS   SET	{2}
+    138  10000 ????
+    139  10000 ????				       LDA	#<.ADDRESS	; Get Lowbyte of Address
+    140  10000 ????				       STA	.POINTER	; Store in pointer
+    141  10000 ????				       LDA	#>.ADDRESS	; Get Hibyte of Address
+    142  10000 ????				       STA	.POINTER+1	; Store in pointer+1
+    143  10000 ????
+    144  10000 ????				       ENDM
+    145  10000 ????
+    146  10000 ????						; EOF
+------- FILE yatba.asm
+      6  10000 ????
+      7  10000 ????						;--------------------------------------
+      8  10000 ????		00 00	    NTSC       =	0
+      9  10000 ????		00 01	    PAL        =	1
+     10  10000 ????		00 01	    COMPILE_VERSION =	PAL
+     11  10000 ????
+     12  10000 ????		00 02	    V2K        =	2
+     13  10000 ????		00 04	    V4K        =	4
+     14  10000 ????		00 02	    COMPILE_SIZE =	V2K
+     15  10000 ????						;--------------------------------------
+     16  10000 ????
+     17  10000 ????		00 80	    screenbyte equ	$80
+     18  10000 ????		00 81	    pf1mirror  equ	$81
+     19  10000 ????		00 82	    tmp1       equ	$82
+     20  10000 ????		00 83	    pf3mirror  equ	$83
+     21  10000 ????		00 84	    tmp2       equ	$84
+     22  10000 ????		00 85	    tmp3       equ	$85
+     23  10000 ????		00 86	    seed       equ	$86
+     24  10000 ????		00 87	    tmp4       equ	$87
+     25  10000 ????		00 88	    p0ypos     equ	$88
+     26  10000 ????		00 89	    p0xpos     equ	$89
+     27  10000 ????		00 8a	    p0yposold  equ	$8A
+     28  10000 ????		00 8b	    p0xposold  equ	$8B
+     29  10000 ????		00 8c	    timecnt    equ	$8C
+     30  10000 ????		00 8d	    pgfxmir    equ	$8D
+     31  10000 ????		00 8e	    mapmapidx  equ	$8E
+     32  10000 ????		00 8f	    BGcolor    equ	$8F
+     33  10000 ????
+     34  10000 ????		00 90	    colmask    equ	$90
+     35  10000 ????
+     36  10000 ????		00 94	    screentile equ	$94
+     37  10000 ????		00 96	    monmir     equ	$96
+     38  10000 ????		00 98	    playergfx  equ	$98
+     39  10000 ????		00 9a	    playercol  equ	$9A
+     40  10000 ????		00 9c	    mcmir      equ	$9C
+     41  10000 ????		00 9e	    tilecolmir equ	$9E
+     42  10000 ????
+     43  10000 ????
+     44  10000 ????		00 a0	    tilecol    equ	$A0
+     45  10000 ????		00 a8	    tilemap    equ	$A8
+     46  10000 ????		00 b0	    monsterx   equ	$B0
+     47  10000 ????		00 b8	    mongfx     equ	$B8
+     48  10000 ????		00 c0	    healthbar  equ	$C0
+     49  10000 ????		00 c8	    monlives   equ	$C8
+     50  10000 ????		00 d0	    Score      equ	$D0
+     51  10000 ????		00 d1	    Diam       equ	$D1
+     52  10000 ????		00 d2	    DigitOnes  equ	$D2
+     53  10000 ????		00 d4	    DigitTens  equ	$D4
+     54  10000 ????		00 d6	    ScoreGfx   equ	$D6
+     55  10000 ????		00 d7	    DiamGfx    equ	$D7
+     56  10000 ????
+     57  10000 ????		00 e0	    roomidx    equ	$E0
+     58  10000 ????		00 e1	    doroomupd  equ	$E1
+     59  10000 ????		00 e2	    monstertype equ	$E2
+     60  10000 ????		00 e5	    canplayS1  equ	$E5
+     61  10000 ????		00 e4	    songidx    equ	$E4
+     62  10000 ????		00 e6	    fpspeed    equ	$E6
+     63  10000 ????		00 f0	    nothing    equ	$F0	;this is just an amazing life RNG!
+     64  10000 ????
+     65  10000 ????						;sprite reset timings
+     66  10000 ????						; ~ 29 34 39 44 50 55 60 65
+     67  10000 ????
+     68  10000 ????						;--------------------------------------
+     69  10000 ????
+     70  10000 ????			   -	       IF	COMPILE_SIZE = V4K	;if we have 4 kilobytes
+     71  10000 ????			   -	       ORG	$F000	; we start at $FFFF-4095
+     72  10000 ????				       ELSE		;else
+     73  f800					      ORG	$F800	; we start at $FFFF-2047
+     74  f800					      ENDIF
+     75  f800
+     76  f800		       59 61 74 62*	      .byte.b	"YatbaYdG"	;A little header for our game
+     77  f808				   Reset		;On reset
+     78  f808				   soft_reset
+     79  f808		       d8		      cld		;clear the decimal flag (in case of)
+     80  f809		       a2 00		      ldx	#$00
+     81  f80b		       a0 ff		      ldy	#$FF
+     82  f80d				   clrmem
+     83  f80d		       b9 00 00 	      lda	$00,y
+     84  f810		       45 ff		      eor	$FF
+     85  f812		       85 ff		      sta	$FF
+     86  f814		       96 00		      stx	$00,y
+     87  f816		       88		      dey
+     88  f817		       d0 f4		      bne	clrmem
+     89  f819
+     90  f819		       a2 ff		      ldx	#$FF	;initialise the stack at $FF
+     91  f81b		       9a		      txs		;store it into the stack pointer
+     92  f81c		       a5 ff		      lda	$FF	;load the calculated start seed
+     93  f81e		       29 7f		      and	#$7F	;make it <128
+     94  f820		       85 86		      sta	seed	;and store it in the seed
+     95  f822
+     96  f822				   main_code		;soft reset
+     97  f822							;Now, we fill the healthbar
+     98  f822				   load_healthbar
+     99  f822		       8a		      txa
+    100  f823		       a0 06		      ldy	#6	;the number of cases to fill
+    101  f825				   draw_healthbar_1
+    102  f825		       88		      dey		;decrease the index
+    103  f826		       99 c0 00 	      sta	healthbar,y	;store it in the corresponding healthbar index
+    104  f829		       d0 fa		      bne	draw_healthbar_1	;continue if not all filled
+    105  f82b		       a9 35		      lda	#$35	;make start room $35
+    106  f82d		       85 8e		      sta	mapmapidx
+    107  f82f
+    108  f82f
+    109  f82f				  -	      IF	COMPILE_SIZE = V4K	;if we make a 4k version
+    110  f82f				  -	      lda	#12	; then initialise the music register
+    111  f82f				  -	      sta	AUDC0
+    112  f82f					      ENDIF
+    113  f82f
+    114  f82f							;a lot of memory pointers are for the sprites. They are all at page $FF, so instead of writing each individual address, we fill the pointer memory at even offsets with $FF
+    115  f82f		       8a		      txa		;the value to fill with
+    116  f830				   fill_adr_loop
+    117  f830		       99 95 00 	      sta	screentile+1,y	;screentile is the first tile. Store it there+the y index
+    118  f833		       c8		      iny		;increase the y index 2 times, to fill only the even bytes
+    119  f834		       c8		      iny
+    120  f835		       c0 0c		      cpy	#$C	;look if we are at the end
+    121  f837		       d0 f7		      bne	fill_adr_loop	;if not, then continue
+    122  f839
+    123  f839		       a9 10		      lda	#$10	;point to the default player index
+    124  f83b		       85 98		      sta	playergfx
+    125  f83d		       85 e6		      sta	fpspeed
+    126  f83f		       a9 18		      lda	#$18	;point to the default player color palette
+    127  f841		       85 9a		      sta	playercol
+    128  f843		       a9 99		      lda	#$99
+    129  f845		       85 d1		      sta	Diam
+    130  f847
+    131  f847
+    132  f847		       a9 03		      lda	#$3	;place the player in the room at X=3 Y=3
+    133  f849		       85 88		      sta	p0ypos
+    134  f84b		       85 89		      sta	p0xpos
+    135  f84d
+    136  f84d
+    137  f84d
+    138  f84d
+    139  f84d							;lda #0					;make score 0 (probably redundant, to be removed)
+    140  f84d							;sta Score
+    141  f84d							;sta Diam
+    142  f84d
+    143  f84d							;lda #$C8				;load the default map tile type (probably redundant, to be removed)
+    144  f84d							;sta tilecolmir			;save it
+    145  f84d							;jmp VerticalBlank4		;and start the game (only needed to maintain the vblank when the reset is holded
+    146  f84d
+    147  f84d
+    148  f84d				   restart_kernel
+    149  f84d							;if we compile for NTSC, we will draw the sunset. So we initialise the background to RED
+    150  f84d				  -	      IF	COMPILE_VERSION = NTSC
+    151  f84d				  -	      lda	#$20	;load the red color
+    152  f84d				  -	      and	colmask	;make it black&white if needed
+    153  f84d				  -	      sta	WSYNC	;wait for end of scanline (to prevent changing color in mid_scanline)
+    154  f84d				  -	      sta	COLUBK	;make it the background color
+    155  f84d				  -	      sta	WSYNC	;wait another time for the end of the scanline
+    156  f84d					      ENDIF
+    157  f84d
+    158  f84d		       85 02		      sta	WSYNC	;and wait a last time for the end of the scanline
+    159  f84f				   position_player
+    160  f84f		       ea		      nop		;the nops are here very important for the right positionning of the player
+    161  f850		       ea		      nop
+    162  f851		       ad 89 00 	      lda.w	p0xpos	;load the x position to set the player to
+    163  f854		       29 07		      and	#$07	;verify if it isn't larger than 7
+    164  f856		       c9 04		      cmp	#4	;test if it is on the left or the right side
+    165  f858		       30 17		      bmi	left_side_2	;if it is on the left side, we run the code for the left side
+    166  f85a		       e9 03		      sbc	#3	;substract 3, because we are on the right side
+    167  f85c		       85 85		      sta	tmp3	;
+    168  f85e							;;;;;;nop nop noperdepop;;;;;;;;;;;;;;
+    169  f85e		       c6 f0		      dec	nothing	;
+    170  f860		       c6 f0		      dec	nothing	;
+    171  f862		       c6 f0		      dec	nothing	;
+    172  f864		       ea		      nop
+    173  f865		       ea		      nop
+    174  f866		       ea		      nop
+    175  f867							;;;;;;end of the nop;;;;;;;;;;;;;;;;;;;
+    176  f867		       a4 85		      ldy	tmp3	;load the number of steps we need to wait
+    177  f869
+    178  f869				   right_side_delay_2
+    179  f869		       88		      dey		;for each step, we wait 5 cycles.
+    180  f86a		       d0 fd		      bne	right_side_delay_2
+    181  f86c
+    182  f86c		       85 10		      sta	RESP0	;now, at the right moment, reset the player pos
+    183  f86e		       4c 79 f8 	      jmp	last_bar	;draw the sunset
+    184  f871
+    185  f871
+    186  f871
+    187  f871				   left_side_2		;if we are on the left side
+    188  f871		       a8		      tay		;load the number of steps we need to wait
+    189  f872				   left_side_delay_2
+    190  f872		       88		      dey		;for each step, we wait 5 cycles.
+    191  f873		       10 fd		      bpl	left_side_delay_2
+    192  f875							;;;;;;nop nop noperdepop;;;;;;;;;;;;;;
+    193  f875		       ea		      nop
+    194  f876		       ea		      nop
+    195  f877							;;;;;;end of the nop;;;;;;;;;;;;;;;;;;;
+    196  f877		       85 10		      sta	RESP0	;and at the right moment, we reset the player pos
+    197  f879
+    198  f879				   last_bar		;the sunset
+    199  f879		       85 02		      sta	WSYNC	;wait for the end of the scanline
+    200  f87b							;we are only going to draw the sunset in NTSC mode, because in PAL mode we don't have enough place left
+    201  f87b				  -	      IF	COMPILE_VERSION = NTSC
+    202  f87b				  -	      ldx	#0	;load the mountain loading index
+    203  f87b				  -	      lda	#$20	;load the initial color
+    204  f87b				  -kersetloop
+    205  f87b				  -	      clc
+    206  f87b				  -	      adc	#$11	;shift the color, and make it brighter
+    207  f87b				  -	      inx		;increase the mountain index
+    208  f87b				  -	      sta	tmp1	;store the color temporairy
+    209  f87b				  -	      and	colmask	;make it black & white if needed
+    210  f87b				  -	      sta	WSYNC	;wait for the end of the scanline (to prevent changing color in mid_scanline)
+    211  f87b				  -	      sta	COLUBK	;store it as the color of the background
+    212  f87b				  -	      and	#$0F	;make it the index for the brightness of the mountains
+    213  f87b				  -	      ora	#$C0	;...and make it green
+    214  f87b				  -	      and	colmask	;...or black and white
+    215  f87b				  -	      sta	COLUPF	;...and store it in the mountains index
+    216  f87b				  -	      lda	tmp1	;reload our real color
+    217  f87b				  -	      ldy	bgmountain,x	;load the background
+    218  f87b				  -	      sty	PF0	;store it in the playfield registers
+    219  f87b				  -	      sty	PF1
+    220  f87b				  -	      sty	PF2	;...all of them (thanks to the strange mirroring)
+    221  f87b				  -	      cmp	#$CA	;look if we are at the end of the colors
+    222  f87b				  -	      bne	kersetloop	; else, we continue
+    223  f87b				  -			;and if we are using PAL
+    224  f87b					      ELSE
+    225  f87b		       85 02		      sta	WSYNC	;we just wait a scanline
+    226  f87d					      ENDIF		;sorry, europeans...
+    227  f87d
+    228  f87d		       85 02		      sta	WSYNC	;waiting yet another scanline
+    229  f87f		       a2 06		      ldx	#6	;this is going to be the number of tile rows
+    230  f881		       a5 8f		      lda	BGcolor	;this is going to be the background color
+    231  f883		       85 09		      sta	COLUBK	;so we save it as one
+    232  f885		       a9 00		      lda	#00	;we clear the playfield registers
+    233  f887		       85 0d		      sta	PF0
+    234  f889		       85 0e		      sta	PF1
+    235  f88b		       85 0f		      sta	PF2	;...all of them
+    236  f88d
+    237  f88d
+    238  f88d
+    239  f88d		       4c a3 f8 	      jmp	start_kernel	;...and we start the drawing of the main picture
+    240  f890
+    241  f890				   some_rts
+    242  f890		       60		      rts
+    243  f891
+    244  f891							;confusion ahead... this is the code to position the monsters on the left side
+    245  f891				   left_side		;if we need to position the monsters on the left side
+    246  f891		       a8		      tay		;load the number of steps we need to wait
+    247  f892				   left_side_delay
+    248  f892		       88		      dey		;for each step, we wait 5 cycles.
+    249  f893		       10 fd		      bpl	left_side_delay
+    250  f895							;;;;;;nop nop noperdepop;;;;;;;;;;;;;;
+    251  f895		       ea		      nop
+    252  f896		       ea		      nop
+    253  f897							;;;;;;end of the nop;;;;;;;;;;;;;;;;;;;
+    254  f897		       85 11		      sta	RESP1	;and at the right moment, we reset the monster pos
+    255  f899		       a5 83		      lda	pf3mirror	;we load the right side of the playfield register 1
+    256  f89b		       ea		      nop
+    257  f89c		       ea		      nop
+    258  f89d		       ea		      nop
+    259  f89e		       85 0e		      sta	PF1	;and we make it the right side
+    260  f8a0		       4c d8 f8 	      jmp	start_of_line_1	;and we continue the drawing of the playfield
+    261  f8a3
+    262  f8a3				   start_kernel 		;This is the real start of the kernel
+    263  f8a3		       a0 07		      ldy	#7	;load the number of lines per row
+    264  f8a5		       85 02		      sta	WSYNC	;wait till the end of the line
+    265  f8a7				   main_kernel
+    266  f8a7		       b1 96		      lda	(monmir),y	;load the monster sprite
+    267  f8a9		       85 1c		      sta	GRP1
+    268  f8ab
+    269  f8ab		       a5 83		      lda	pf3mirror	;load the right side of the playfield
+    270  f8ad		       85 0e		      sta	PF1
+    271  f8af
+    272  f8af		       b1 9c		      lda	(mcmir),y	;load the colors of the monsters
+    273  f8b1		       25 90		      and	colmask	;make it black&white if needed
+    274  f8b3		       85 07		      sta	COLUP1
+    275  f8b5		       84 87		      sty	tmp4	;save temporary the y register (we need it to position the monster)
+    276  f8b7
+    277  f8b7		       85 02		      sta	WSYNC	;sync with end of scanline
+    278  f8b9
+    279  f8b9							;position the monsters (note part of this code is outside this block)
+    280  f8b9		       a5 81		      lda	pf1mirror	;load left side of the playfield
+    281  f8bb		       85 0e		      sta	PF1
+    282  f8bd		       b5 b0		      lda	monsterx,x	;load the x position at which we have to position
+    283  f8bf		       c9 04		      cmp	#4	;look if it is on the left or the right side
+    284  f8c1		       30 ce		      bmi	left_side	;if it is at the left side, draw it there
+    285  f8c3		       e9 03		      sbc	#3	;else, we need 3 steps less
+    286  f8c5		       85 85		      sta	tmp3	;save it temporary
+    287  f8c7							;;;;;;nop nop noperdepop;;;;;;;;;;;;;;;
+    288  f8c7		       c6 f0		      dec	nothing
+    289  f8c9		       c6 f0		      dec	nothing
+    290  f8cb		       c6 f0		      dec	nothing
+    291  f8cd							;;;;;;end of the nop;;;;;;;;;;;;;;;;;;;
+    292  f8cd		       a5 83		      lda	pf3mirror	;load the right side of the playfield
+    293  f8cf		       85 0e		      sta	PF1
+    294  f8d1		       a4 85		      ldy	tmp3	;load the number of steps we need to delay
+    295  f8d3
+    296  f8d3				   right_side_delay
+    297  f8d3		       88		      dey		;for each step, we wait 5 cycles.
+    298  f8d4		       d0 fd		      bne	right_side_delay
+    299  f8d6
+    300  f8d6		       85 11		      sta	RESP1	;and position the monster at the right pos
+    301  f8d8
+    302  f8d8
+    303  f8d8
+    304  f8d8				   start_of_line_1
+    305  f8d8		       a4 87		      ldy	tmp4	;we restore the y register
+    306  f8da		       85 02		      sta	WSYNC	;and wait 'till the end of the scanline
+    307  f8dc
+    308  f8dc					      IF	COMPILE_VERSION = PAL	;if we are using PAL, we need to draw 1 extra dummy line, to have the right aspect ratio and no letterboxing
+    309  f8dc		       a5 81		      lda	pf1mirror	;load left side of the playfield
+    310  f8de		       85 0e		      sta	PF1
+    311  f8e0							;wait until left side drawn
+    312  f8e0		       a1 80		      LDA	($80,X)
+    313  f8e2		       a1 80		      LDA	($80,X)
+    314  f8e4		       a1 80		      LDA	($80,X)
+    315  f8e6		       a1 80		      LDA	($80,X)
+    316  f8e8		       a1 80		      LDA	($80,X)
+    317  f8ea		       a5 83		      lda	pf3mirror	;load right side of the playfield
+    318  f8ec		       85 0e		      sta	PF1
+    319  f8ee		       85 02		      sta	WSYNC	;and wait for the end of the scanline
+    320  f8f0					      ENDIF
+    321  f8f0
+    322  f8f0		       a5 81		      lda	pf1mirror	;reload the left side of the playfield
+    323  f8f2		       85 0e		      sta	PF1
+    324  f8f4
+    325  f8f4		       b5 a8		      lda	tilemap,x	;load the current tilemap row
+    326  f8f6		       85 80		      sta	screenbyte	; as the source
+    327  f8f8
+    328  f8f8		       b1 94		      lda	(screentile),y	;load the drawing of tile?
+    329  f8fa		       85 82		      sta	tmp1	;save it temporary for fast access
+    330  f8fc
+    331  f8fc							;load the representation of the right side
+    332  f8fc		       06 80		      asl	screenbyte	;shift left the screen byte
+    333  f8fe		       b0 02		      bcs	dont_and_1	;if there isn't a tile there
+    334  f900
+    335  f900		       29 0f		      and	#$0F	; then we erase the right (left? who knows with this stupid mirroring) side
+    336  f902
+    337  f902				   dont_and_1
+    338  f902		       06 80		      asl	screenbyte	;shift left the screen byte another time
+    339  f904		       b0 02		      bcs	dont_and_2	;if there isn't a tile there
+    340  f906
+    341  f906		       29 f0		      and	#$F0	; then we erase the left side
+    342  f908
+    343  f908				   dont_and_2
+    344  f908		       85 84		      sta	tmp2	;weird... we first save it temporary
+    345  f90a		       a5 83		      lda	pf3mirror	;we load our current right side
+    346  f90c		       85 0e		      sta	PF1	; to continue our drawing with the ancient version
+    347  f90e		       a5 84		      lda	tmp2	;then we reload our new version
+    348  f910		       85 83		      sta	pf3mirror	; and make it the current version...
+    349  f912
+    350  f912							;load the representation of the center side
+    351  f912		       a5 82		      lda	tmp1	;load the drawing for the tile
+    352  f914		       06 80		      asl	screenbyte	;shift left the screen byte
+    353  f916		       b0 02		      bcs	dont_and_3	;if there isn't a tile there
+    354  f918
+    355  f918		       29 0f		      and	#$0F	; then we erase the right side
+    356  f91a
+    357  f91a				   dont_and_3
+    358  f91a		       06 80		      asl	screenbyte	;shift left the screen byte yet another time
+    359  f91c		       b0 02		      bcs	dont_and_4	;if there isn't now a tile there
+    360  f91e
+    361  f91e		       29 f0		      and	#$F0	; then we erase the left side
+    362  f920
+    363  f920				   dont_and_4
+    364  f920		       4a		      lsr		;we shift it one bit right for our stupid playfield registers
+    365  f921		       85 0f		      sta	PF2	;and store it for the center. Note we are now more or less at the beginning of the second line, so we are safe to do that directly...
+    366  f923							; and of course, we don't need to mirror it!
+    367  f923							;load the representation of the left side
+    368  f923		       a5 82		      lda	tmp1	;load the drawing for the tile
+    369  f925		       06 80		      asl	screenbyte	;shift left the screen byte another time
+    370  f927		       b0 02		      bcs	dont_and_5	;if there isn't now a tile there
+    371  f929
+    372  f929		       29 0f		      and	#$0F	; then we erase the right side (this is why i hate unrolling loops... you keep on repeating yourself!)
+    373  f92b
+    374  f92b				   dont_and_5
+    375  f92b		       06 80		      asl	screenbyte	;shift left the screen byte a last time (note the last 2 bits are unused)
+    376  f92d		       b0 02		      bcs	dont_and_6	;if there isn't some last tile there this time...
+    377  f92f
+    378  f92f		       29 f0		      and	#$F0	; then we erase the left side
+    379  f931
+    380  f931				   dont_and_6
+    381  f931		       85 0e		      sta	PF1	;finally, we are on the good position, so we draw it
+    382  f933		       85 81		      sta	pf1mirror	; and store it as a mirror
+    383  f935
+    384  f935							;so... now, all our tile registers are loaded, so now, it is time for the players...
+    385  f935
+    386  f935		       e4 88		      cpx	p0ypos	;look if we are at the right position for our gentle player
+    387  f937		       f0 03		      beq	draw_player	;if it is the case, we draw it
+    388  f939		       a9 00		      lda	#00	;else, we clear it
+    389  f93b		       2c		      .byte.b	$2c	; and then do some kind of skip
+    390  f93c				   draw_player
+    391  f93c		       b1 98		      lda	(playergfx),y	; to prevent us from loading the player grafix
+    392  f93e		       85 82		      sta	tmp1	;and whatever we have, we store it temporary, to load the player quickly once the beam has passed by
+    393  f940		       ea		      nop		;a little nop of timing fix...
+    394  f941		       a5 83		      lda	pf3mirror	; and we are ready to draw the right side of the playfield
+    395  f943		       85 0e		      sta	PF1
+    396  f945
+    397  f945		       b1 9a		      lda	(playercol),y	;now, we load the color for the player
+    398  f947		       25 90		      and	colmask	; make it black & white if needed
+    399  f949		       85 84		      sta	tmp2	; and store it temporary, still waiting for the beam to pass by
+    400  f94b
+    401  f94b
+    402  f94b		       b5 b8		      lda	mongfx,x	;now, we load the pointer for the monster grafix
+    403  f94d		       85 96		      sta	monmir
+    404  f94f		       09 08		      ora	#8	;and the monster colors
+    405  f951		       85 9c		      sta	mcmir
+    406  f953
+    407  f953		       b1 9e		      lda	(tilecolmir),y	;finally, we load the color for the tiles
+    408  f955		       25 90		      and	colmask	; black & white if needed
+    409  f957		       85 08		      sta	COLUPF	;and finally, the beam has passed by, so we can store it savely
+    410  f959							;note the color is one late on the tiles. this create that beautiful 3D-like effect... well, I happen to like it!
+    411  f959		       a5 82		      lda	tmp1	;we load our previously loaded grafix for the player
+    412  f95b		       85 1b		      sta	GRP0
+    413  f95d		       a5 81		      lda	pf1mirror	;we load the left side of the playfield
+    414  f95f		       85 0e		      sta	PF1
+    415  f961		       a5 84		      lda	tmp2	; the color for the player
+    416  f963		       85 06		      sta	COLUP0
+    417  f965		       88		      dey		;we look if we aren't at the end of the tile
+    418  f966		       f0 03		      beq	reset_y	; else we load a new tile
+    419  f968		       4c a7 f8 	      jmp	main_kernel	; and we restart
+    420  f96b
+    421  f96b
+    422  f96b				   reset_y
+    423  f96b		       a0 07		      ldy	#7	;reset Y to the tile's height
+    424  f96d		       ca		      dex		;decrease the row counter
+    425  f96e		       f0 03		      beq	reset_x	;if we are at the end of the picture, then we start the bottom part
+    426  f970		       4c a7 f8 	      jmp	main_kernel	;else, we continue what we were doing
+    427  f973
+    428  f973				   reset_x
+    429  f973		       a9 00		      lda	#0	;we clear the monster sprites
+    430  f975		       85 1c		      sta	GRP1
+    431  f977		       a0 03		      ldy	#3	;and we draw 3 dummy lines of playfield
+    432  f979		       4c 8a f9 	      jmp	bottom3
+    433  f97c				   draw_bottom3
+    434  f97c		       a5 81		      lda	pf1mirror	;+3
+    435  f97e		       85 0e		      sta	PF1	;+3
+    436  f980		       a1 80		      LDA	($80,X)
+    437  f982		       a1 80		      LDA	($80,X)
+    438  f984		       a1 80		      LDA	($80,X)
+    439  f986		       a1 80		      LDA	($80,X)
+    440  f988		       a1 80		      LDA	($80,X)
+    441  f98a				   bottom3
+    442  f98a		       a5 83		      lda	pf3mirror	;+3
+    443  f98c		       85 0e		      sta	PF1	;+3
+    444  f98e		       85 02		      sta	WSYNC
+    445  f990		       88		      dey
+    446  f991		       d0 e9		      bne	draw_bottom3
+    447  f993							;note Y is now 0
+    448  f993		       84 1b		      sty	GRP0	;we clear the players grafix
+    449  f995		       a5 8f		      lda	BGcolor	;we hide the background
+    450  f997		       85 08		      sta	COLUPF
+    451  f999		       a5 c1		      lda	healthbar+1	;and we start the loading of the healthbar
+    452  f99b		       85 0e		      sta	PF1
+    453  f99d		       a5 c2		      lda	healthbar+2
+    454  f99f		       85 0f		      sta	PF2
+    455  f9a1
+    456  f9a1
+    457  f9a1		       a9 30		      lda	#%00110000	;we put the playfield in repeating mode
+    458  f9a3		       85 0a		      sta	CTRLPF
+    459  f9a5		       85 02		      sta	WSYNC	; wait till you known why
+    460  f9a7		       a9 02		      lda	#$02	;load a little grey
+    461  f9a9				  -	      IF	COMPILE_VERSION = NTSC	;load the height of the healthbar
+    462  f9a9				  -	      ldx	#6
+    463  f9a9					      ELSE
+    464  f9a9		       a2 08		      ldx	#8
+    465  f9ab					      ENDIF
+    466  f9ab		       85 08		      sta	COLUPF	;and we make a littlish grey separator bar
+    467  f9ad		       85 09		      sta	COLUBK
+    468  f9af				  -	      IF	COMPILE_VERSION = NTSC	;we load the foreground color for the healthbar
+    469  f9af				  -	      lda	#$C8
+    470  f9af					      ELSE
+    471  f9af		       a9 58		      lda	#$58
+    472  f9b1					      ENDIF
+    473  f9b1		       25 90		      and	colmask	;make it black & white if needed... you never know where those 2016'ers take their old TV from...
+    474  f9b3		       a8		      tay		;for once, it will be the Y the temporary register
+    475  f9b4				  -	      IF	COMPILE_VERSION = NTSC	;load the background color for the healthbar
+    476  f9b4				  -	      lda	#$44
+    477  f9b4					      ELSE
+    478  f9b4		       a9 64		      lda	#$64
+    479  f9b6					      ENDIF
+    480  f9b6		       25 90		      and	colmask	;and black 'n white it
+    481  f9b8		       85 02		      sta	WSYNC	;wait till end of scanline
+    482  f9ba		       84 08		      sty	COLUPF	;store the front color
+    483  f9bc		       85 09		      sta	COLUBK	; and the back one
+    484  f9be				   vb4
+    485  f9be							;load left side of the healthbar
+    486  f9be		       a5 c0		      lda	healthbar
+    487  f9c0		       85 0d		      sta	PF0
+    488  f9c2		       a5 c1		      lda	healthbar+1
+    489  f9c4		       85 0e		      sta	PF1
+    490  f9c6		       a5 c2		      lda	healthbar+2
+    491  f9c8		       85 0f		      sta	PF2
+    492  f9ca							;nopperdenop
+    493  f9ca		       a1 80		      LDA	($80,X)
+    494  f9cc		       a1 80		      LDA	($80,X)
+    495  f9ce		       ea		      nop
+    496  f9cf							;load the right one
+    497  f9cf		       a5 c3		      lda	healthbar+3
+    498  f9d1		       85 0d		      sta	PF0
+    499  f9d3		       a5 c4		      lda	healthbar+4
+    500  f9d5		       85 0e		      sta	PF1
+    501  f9d7		       a5 c5		      lda	healthbar+5
+    502  f9d9		       85 0f		      sta	PF2
+    503  f9db							;and draw the number of lines needed
+    504  f9db		       ca		      dex
+    505  f9dc		       85 02		      sta	WSYNC
+    506  f9de		       d0 de		      bne	vb4
+    507  f9e0
+    508  f9e0							;the little grey bar...
+    509  f9e0		       a9 02		      lda	#$02
+    510  f9e2		       85 08		      sta	COLUPF
+    511  f9e4		       85 09		      sta	COLUBK
+    512  f9e6							;and a clear playfield...
+    513  f9e6		       a9 00		      lda	#0
+    514  f9e8		       85 0d		      sta	PF0
+    515  f9ea		       85 0e		      sta	PF1
+    516  f9ec		       85 0f		      sta	PF2
+    517  f9ee		       85 02		      sta	WSYNC
+    518  f9f0
+    519  f9f0							;load the beige color for the other part of the footer
+    520  f9f0				  -	      IF	COMPILE_VERSION = NTSC
+    521  f9f0				  -	      lda	#$FA
+    522  f9f0					      ELSE
+    523  f9f0		       a9 4a		      lda	#$4A
+    524  f9f2					      ENDIF
+    525  f9f2		       25 90		      and	colmask	; or black & white, by the way...
+    526  f9f4		       85 09		      sta	COLUBK
+    527  f9f6		       18		      clc
+    528  f9f7		       e9 06		      sbc	#6	;a little darker for the front...
+    529  f9f9		       85 08		      sta	COLUPF
+    530  f9fb
+    531  f9fb							;and PAL wants another scanline... okay!
+    532  f9fb					      IF	COMPILE_VERSION = PAL
+    533  f9fb		       85 02		      sta	WSYNC
+    534  f9fd					      ENDIF
+    535  f9fd
+    536  f9fd							;a score routine for all your 4k'ers... note it is half-finished!
+    537  f9fd				  -	      IF	COMPILE_SIZE = V4K
+    538  f9fd				  -			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    539  f9fd				  -			; Score display routine
+    540  f9fd				  -			;   source: http://www.randomterrain.com/atari-2600-lets-make-a-game-spiceware-03.html
+    541  f9fd				  -PSFDskip
+    542  f9fd				  -
+    543  f9fd				  -	      ldx	#1	; use X as the loop counter for PSFDloop
+    544  f9fd				  -PSFDloop
+    545  f9fd				  -	      lda	Score,x	; LoaD A with Diam(first pass) or Score(second pass)
+    546  f9fd				  -	      and	#$0F	; remove the tens digit
+    547  f9fd				  -	      sta	tmp1	; Store A into Temp
+    548  f9fd				  -	      asl		; Accumulator Shift Left (# * 2)
+    549  f9fd				  -	      asl		; Accumulator Shift Left (# * 4)
+    550  f9fd				  -	      adc	tmp1	; ADd with Carry value in Temp (# * 5)
+    551  f9fd				  -	      sta	DigitOnes,x	; STore A in DigitOnes+1(first pass) or DigitOnes(second pass)
+    552  f9fd				  -	      lda	Score,x	; LoaD A with Diam(first pass) or Score(second pass)
+    553  f9fd				  -	      and	#$F0	; remove the ones digit
+    554  f9fd				  -	      lsr		; Logical Shift Right (# / 2)
+    555  f9fd				  -	      lsr		; Logical Shift Right (# / 4)
+    556  f9fd				  -	      sta	tmp1	; Store A into Temp
+    557  f9fd				  -	      lsr		; Logical Shift Right (# / 8)
+    558  f9fd				  -	      lsr		; Logical Shift Right (# / 16)
+    559  f9fd				  -	      adc	tmp1	; ADd with Carry value in Temp ((# / 16) * 5)
+    560  f9fd				  -	      sta	DigitTens,x	; STore A in DigitTens+1(first pass) or DigitTens(second pass)
+    561  f9fd				  -	      dex		; DEcrement X by 1
+    562  f9fd				  -	      bpl	PSFDloop	; Branch PLus (positive) to PSFDloop
+    563  f9fd				  -
+    564  f9fd				  -	      ldx	#5
+    565  f9fd				  -
+    566  f9fd				  -ScoreLoop		;   43 - cycle after bpl ScoreLoop
+    567  f9fd				  -	      ldy	DigitTens	; 3 46 - get the tens digit offset for the Score
+    568  f9fd				  -	      lda	DigitGfx,y	; 5 51 -   use it to load the digit graphics
+    569  f9fd				  -	      and	#$F0	; 2 53 -   remove the graphics for the ones digit
+    570  f9fd				  -	      sta	ScoreGfx	; 3 56 -   and save it
+    571  f9fd				  -	      ldy	DigitOnes	; 3 59 - get the ones digit offset for the Score
+    572  f9fd				  -	      lda	DigitGfx,y	; 5 64 -   use it to load the digit graphics
+    573  f9fd				  -	      and	#$0F	; 2 66 -   remove the graphics for the tens digit
+    574  f9fd				  -	      ora	ScoreGfx	; 3 69 -   merge with the tens digit graphics
+    575  f9fd				  -	      sta	ScoreGfx	; 3 72 -   and save it
+    576  f9fd				  -	      sta	WSYNC	; 3 75 - wait for end of scanline
+    577  f9fd				  -			;---------------------------------------
+    578  f9fd				  -	      sta	PF1	; 3  3 - @66-28, update playfield for Score dislay
+    579  f9fd				  -	      ldy	DigitTens+1	; 3  6 - get the left digit offset for the Diam
+    580  f9fd				  -	      lda	DigitGfx,y	; 5 11 -   use it to load the digit graphics
+    581  f9fd				  -	      and	#$F0	; 2 13 -   remove the graphics for the ones digit
+    582  f9fd				  -	      sta	DiamGfx	; 3 16 -   and save it
+    583  f9fd				  -	      ldy	DigitOnes+1	; 3 19 - get the ones digit offset for the Diam
+    584  f9fd				  -	      lda	DigitGfx,y	; 5 24 -   use it to load the digit graphics
+    585  f9fd				  -	      and	#$0F	; 2 26 -   remove the graphics for the tens digit
+    586  f9fd				  -	      ora	DiamGfx	; 3 29 -   merge with the tens digit graphics
+    587  f9fd				  -	      asl
+    588  f9fd				  -	      sta	DiamGfx	; 3 32 -   and save it
+    589  f9fd				  -	      jsr	Sleep12	;12 44 - waste some cycles
+    590  f9fd				  -	      sta	PF1	; 3 47 - @39-54, update playfield for Diam display
+    591  f9fd				  -	      ldy	ScoreGfx	; 3 50 - preload for next scanline
+    592  f9fd				  -	      sta	WSYNC	; 3 53 - wait for end of scanline
+    593  f9fd				  -			;---------------------------------------
+    594  f9fd				  -	      sty	PF1	; 3  3 - @66-28, update playfield for the Score display
+    595  f9fd				  -	      inc	DigitTens	; 5  8 - advance for the next line of graphic data
+    596  f9fd				  -	      inc	DigitTens+1	; 5 13 - advance for the next line of graphic data
+    597  f9fd				  -	      inc	DigitOnes	; 5 18 - advance for the next line of graphic data
+    598  f9fd				  -	      inc	DigitOnes+1	; 5 23 - advance for the next line of graphic data
+    599  f9fd				  -	      jsr	Sleep12	;12 35 - waste some cycles
+    600  f9fd				  -	      IF	COMPILE_VERSION = NTSC
+    601  f9fd				  -	      dex		; 2 37 - decrease the loop counter
+    602  f9fd				  -	      ELSE
+    603  f9fd				  -	      nop
+    604  f9fd				  -	      ENDIF
+    605  f9fd				  -	      sta	PF1	; 3 40 - @39-54, update playfield for the Diam display
+    606  f9fd				  -	      IF	COMPILE_VERSION = PAL	;PAL want's a 3-line kernel, where NTSC wants a 2-line one
+    607  f9fd				  -	      sta	WSYNC
+    608  f9fd				  -	      sty	PF1	; 3  3 - @66-28, update playfield for the Score display
+    609  f9fd				  -	      jsr	Sleep12
+    610  f9fd				  -	      nop
+    611  f9fd				  -	      nop
+    612  f9fd				  -	      nop
+    613  f9fd				  -	      nop
+    614  f9fd				  -	      jsr	Sleep12	;12 35 - waste some cycles
+    615  f9fd				  -	      dex		; 2 37 - decrease the loop counter
+    616  f9fd				  -	      sta	PF1	; 3 40 - @39-54, update playfield for the Diam display
+    617  f9fd				  -
+    618  f9fd				  -	      ENDIF
+    619  f9fd				  -	      bne	ScoreLoop	; 2 42 - (3 43) if dex != 0 then branch to ScoreLoop
+    620  f9fd				  -	      sta	WSYNC	; 3 45 - wait for end of scanline
+    621  f9fd				  -			;---------------------------------------
+    622  f9fd				  -	      stx	PF1	; 3  3 - x = 0, so this blanks out playfield
+    623  f9fd				  -
+    624  f9fd				  -			;goodness... I like when i don't have to code by myself! hihi...
+    625  f9fd				  -	      IF	COMPILE_VERSION = PAL	;Add some extra lines for PAL
+    626  f9fd				  -	      sta	WSYNC
+    627  f9fd				  -	      sta	WSYNC
+    628  f9fd				  -	      sta	WSYNC
+    629  f9fd				  -	      ENDIF
+    630  f9fd					      ELSE		;for all you 2k folks
+    631  f9fd
+    632  f9fd							;we load the number of empty lines we need to wait
+    633  f9fd				  -	      IF	COMPILE_VERSION = NTSC
+    634  f9fd				  -	      ldx	#15
+    635  f9fd					      ELSE
+    636  f9fd		       a2 14		      ldx	#20
+    637  f9ff					      ENDIF
+    638  f9ff				   noscore_loop
+    639  f9ff		       85 02		      sta	WSYNC	; and we wait...
+    640  fa01		       ca		      dex
+    641  fa02		       d0 fb		      bne	noscore_loop
+    642  fa04					      ENDIF
+    643  fa04		       85 02		      sta	WSYNC	;last chance to wait!
+    644  fa06
+    645  fa06		       a9 42		      lda	#%01000010	;and we put the playfield back in mirroring mode, for the picture to rebegin...
+    646  fa08		       85 01		      sta	VBLANK
+    647  fa0a
+    648  fa0a							;this time, no blankline guesswork anymode... we use our good old friend the timer to know if we are already ready!
+    649  fa0a				  -	      IF	COMPILE_VERSION = NTSC
+    650  fa0a				  -	      lda	#20
+    651  fa0a					      ELSE
+    652  fa0a		       a9 20		      lda	#32
+    653  fa0c					      ENDIF		; adjust to taste...
+    654  fa0c		       8d 96 02 	      sta	TIM64T
+    655  fa0f
+    656  fa0f		       a9 80		      lda	#%10000000
+    657  fa11		       24 02		      bit	CXP0FB	;look if the player just landed in a rock
+    658  fa13		       d0 37		      bne	random_pos_player	;if it is the case, time to look for somewhere else to land
+    659  fa15		       24 07		      bit	CXPPMM	;look if the player just landed in a monster
+    660  fa17		       d0 3b		      bne	hit_monster	;if it is the case, it's time to kill
+    661  fa19		       85 2c		      sta	CXCLR	; and we clear all our old stuff
+    662  fa1b
+    663  fa1b		       a5 8c		      lda	timecnt	;load the volume for all our neath sound effects
+    664  fa1d		       25 e5		      and	canplayS1
+    665  fa1f							;lsr
+    666  fa1f		       85 1a		      sta	AUDV1
+    667  fa21		       a5 8c		      lda	timecnt
+    668  fa23		       c9 04		      cmp	#4	;look if we can stop the music
+    669  fa25		       10 0e		      bpl	dont_stop_me_now
+    670  fa27		       a9 00		      lda	#0	; if we can, then shut it
+    671  fa29		       85 19		      sta	AUDV0
+    672  fa2b		       85 1a		      sta	AUDV1
+    673  fa2d		       85 15		      sta	AUDC0
+    674  fa2f		       85 16		      sta	AUDC1
+    675  fa31		       85 18		      sta	AUDF1
+    676  fa33		       a5 8c		      lda	timecnt
+    677  fa35				   dont_stop_me_now
+    678  fa35		       c9 08		      cmp	#8	;look if we have to update the old position for the player
+    679  fa37		       10 08		      bpl	pass_decay_ppos
+    680  fa39		       a5 88		      lda	p0ypos
+    681  fa3b		       85 8a		      sta	p0yposold
+    682  fa3d		       a5 89		      lda	p0xpos
+    683  fa3f		       85 8b		      sta	p0xposold
+    684  fa41
+    685  fa41				   pass_decay_ppos
+    686  fa41
+    687  fa41		       c6 8c		      dec	timecnt	;decrease the time counter
+    688  fa43		       30 0c		      bmi	set_timecnt_0_far	;zero it as needed
+    689  fa45		       4c d9 fb 	      jmp	VerticalBlank2	;and update the monsters
+    690  fa48				   eoupdate_player
+    691  fa48
+    692  fa48		       4c 22 fc 	      jmp	VerticalBlank4	;else, we go directly to the next part
+    693  fa4b
+    694  fa4b							;the cake is a lie
+    695  fa4b				   Sleep12		;jsr here to sleep for 12 cycles
+    696  fa4b		       60		      rts		;ReTurn from Subroutine
+    697  fa4c
+    698  fa4c
+    699  fa4c				   random_pos_player		;auch... let's move from there
+    700  fa4c							;lda #7				;but first... play some music!
+    701  fa4c							;sta AUDC1			;zap!
+    702  fa4c							;sta AUDF1			;zapperdeflap!
+    703  fa4c							;lda #0				;don't know anymore what i'm doing here...
+    704  fa4c							;sta mongfx,x
+    705  fa4c							;lda nothing		;load some ugly dirty random number
+    706  fa4c							;and #$7F			;not too big, if possible...
+    707  fa4c							;sta mapmapidx		;and teleport to a screen there
+    708  fa4c		       85 2c		      sta	CXCLR	;clear the collision... omit this is you ain't a whimp!
+    709  fa4e				  -	      IF	COMPILE_VERSION = NTSC	;wait a bit for a nice animation... epilepsy ahead!
+    710  fa4e				  -			;lda fpspeed
+    711  fa4e					      ELSE
+    712  fa4e							;lda fpspeed
+    713  fa4e					      ENDIF
+    714  fa4e							;sta timecnt
+    715  fa4e		       4c 48 fa 	      jmp	eoupdate_player	;and end
+    716  fa51							;------------------------------------------------
+    717  fa51				   set_timecnt_0_far
+    718  fa51		       4c a0 fa 	      jmp	set_timecnt_0	;my jump is to far away, so i need to do it in 2 steps...
+    719  fa54
+    720  fa54				   hit_monster		;auch!
+    721  fa54		       a9 ff		      lda	#$FF
+    722  fa56		       85 e5		      sta	canplayS1	;enable the sound
+    723  fa58		       a6 88		      ldx	p0ypos	;look where we exactly hit the monster
+    724  fa5a							;lda #$80
+    725  fa5a							;cmp mongfx,x			;look if the monster is a potion... (this is nonsense... i implemented all kind of strange monsters, but forget the spawn code)
+    726  fa5a							;beq drink_potion		;if it's the case, we drink it (the monster, not the potion ;-)
+    727  fa5a							;lda #$90
+    728  fa5a							;cmp mongfx,x			;look if the monster is a... whirlpool? (well, some volonteer to end my spawn code? can't decide how to do it!)
+    729  fa5a							;beq random_pos_player	;then... zap!
+    730  fa5a		       a9 a0		      lda	#$A0
+    731  fa5c		       d5 b8		      cmp	mongfx,x	;look if the monster... is the finish? goodness...
+    732  fa5e		       d0 09		      bne	no_finish	;if it is not, do nothing
+    733  fa60		       a9 07		      lda	#7	;but first... play some music!
+    734  fa62		       85 16		      sta	AUDC1	;zap!
+    735  fa64		       85 18		      sta	AUDF1	;zapperdeflap!
+    736  fa66		       4c 90 fa 	      jmp	gameover_far	;year, the finish kill you... but don't tell it, please!
+    737  fa69				   no_finish
+    738  fa69		       20 89 fd 	      jsr	decrease_lives	;okey... it's a real monster, so it really hurts!
+    739  fa6c		       a9 08		      lda	#8	;make some noise
+    740  fa6e		       85 16		      sta	AUDC1
+    741  fa70		       85 18		      sta	AUDF1
+    742  fa72		       d6 c8		      dec	monlives,x	;and hurt mister monster too!
+    743  fa74		       10 0d		      bpl	reset_pos_player	;finally, if possible, we jump back. Else... well poor you! poor monster too, by the way.)
+    744  fa76
+    745  fa76							;finally, we "kill" the "monster" (or potion, or whirlpool, or whatever it is...)
+    746  fa76				   kill_monster
+    747  fa76		       a9 00		      lda	#0	;load a zero
+    748  fa78		       f8		      sed		;set the 6502 in decimal mode
+    749  fa79		       38		      sec		;just a cool way to say...
+    750  fa7a		       65 d0		      adc	Score	;...increase the score by 1
+    751  fa7c		       85 d0		      sta	Score	; and save the score
+    752  fa7e		       d8		      cld		;and don't forget to put the machine back in binary mode... this kind of processor don't like to remain decimated!
+    753  fa7f							;lda nothing	;i think this would be the code to load a potion
+    754  fa7f							;beq load_potion
+    755  fa7f		       a9 00		      lda	#0
+    756  fa81							;.byte #$2c
+    757  fa81				   load_potion
+    758  fa81							;lda #$80
+    759  fa81		       95 b8		      sta	mongfx,x	;it doesn't work...
+    760  fa83
+    761  fa83				   reset_pos_player		;reput us back to where we were, if possible!
+    762  fa83		       a5 8b		      lda	p0xposold	;(does i really need to explain this)
+    763  fa85		       85 89		      sta	p0xpos
+    764  fa87		       a5 8a		      lda	p0yposold	;...okay... this code loads the old value of the position of the player
+    765  fa89		       85 88		      sta	p0ypos	; and put if back where it came from...
+    766  fa8b		       85 2c		      sta	CXCLR	;clear the collision (again, omit this if you ain't a whimp!)
+    767  fa8d		       4c 48 fa 	      jmp	eoupdate_player	;and and... ehh... end!
+    768  fa90
+    769  fa90				   gameover_far
+    770  fa90		       20 a5 fd 	      jsr	gameover	;it's a long road to home
+    771  fa93		       4c 83 fa 	      jmp	reset_pos_player	;...when your branches are 1 byte long!
+    772  fa96
+    773  fa96				   drink_potion
+    774  fa96							;lda #0				;"clear" the potion
+    775  fa96							;sta mongfx,x
+    776  fa96							;sta CXCLR			;...and the collision (omit this if you ARE a whimp!)
+    777  fa96							;lda #4				;make a glook glook sound (no? seriously?!)
+    778  fa96							;sta AUDC1
+    779  fa96							;sta AUDF1
+    780  fa96
+    781  fa96							;and increase the healthbar... the easy way!
+    782  fa96							;lda #$FF
+    783  fa96							;ldx #6
+    784  fa96
+    785  fa96				   search_next_empty		;search_next_empty...
+    786  fa96							;dex
+    787  fa96							;cmp healthbar,x
+    788  fa96							;bne search_next_empty
+    789  fa96							;...and fill it!
+    790  fa96							;inx
+    791  fa96							;sta healthbar,x
+    792  fa96							;ldx p0ypos
+    793  fa96							;jmp eoupdate_player
+    794  fa96
+    795  fa96				   gameover_resetter		;i really have a bad memory... but it has something to do with the game over!
+    796  fa96		       a5 0c		      lda	INPT4
+    797  fa98		       30 03		      bmi	eoupdate_player_far
+    798  fa9a		       4c 08 f8 	      jmp	soft_reset
+    799  fa9d				   eoupdate_player_far
+    800  fa9d		       4c 48 fa 	      jmp	eoupdate_player
+    801  faa0
+    802  faa0				   set_timecnt_0		;self-explaining, isn't it?
+    803  faa0		       a9 00		      lda	#0
+    804  faa2		       85 8c		      sta	timecnt
+    805  faa4
+    806  faa4				   update_player
+    807  faa4		       a5 e4		      lda	songidx	; play the song
+    808  faa6				  -	      IF	COMPILE_SIZE = V4K	;if we have enough memory
+    809  faa6				  -	      and	#31	; which is 32 notes long
+    810  faa6				  -	      tay
+    811  faa6				  -	      lda	song,y	;load the note
+    812  faa6				  -	      sta	AUDF0	;and make it beep as that
+    813  faa6				  -	      lda	#12
+    814  faa6				  -	      sta	AUDC0
+    815  faa6				  -	      lda	#3	;load the volume
+    816  faa6				  -	      sta	AUDV0	; because me might have shut it down
+    817  faa6				  -	      lda	songidx
+    818  faa6				  -	      and	#%10100000
+    819  faa6				  -	      beq	no_beat
+    820  faa6				  -	      lda	songidx
+    821  faa6				  -	      and	#%11100000
+    822  faa6				  -	      cmp	#%11100000
+    823  faa6				  -	      bne	no_extro
+    824  faa6				  -	      lda	#00
+    825  faa6				  -	      sta	AUDV0
+    826  faa6				  -no_extro
+    827  faa6				  -	      tya
+    828  faa6					      ENDIF
+    829  faa6		       29 07		      and	#7
+    830  faa8		       a8		      tay
+    831  faa9		       b9 d9 fd 	      lda	beat_type,y
+    832  faac		       f0 09		      beq	no_beat
+    833  faae		       85 16		      sta	AUDC1
+    834  fab0		       b9 d1 fd 	      lda	beat_pitch,y
+    835  fab3		       85 18		      sta	AUDF1
+    836  fab5		       a9 05		      lda	#5
+    837  fab7				   no_beat
+    838  fab7		       e6 e4		      inc	songidx	;and increase the song index
+    839  fab9							;ELSE
+    840  fab9							;lda #0
+    841  fab9							;ENDIF
+    842  fab9		       85 e5		      sta	canplayS1	;we silent the environnement
+    843  fabb		       a4 88		      ldy	p0ypos	;load the player position
+    844  fabd		       85 2c		      sta	CXCLR	;clear the collisions
+    845  fabf		       a5 98		      lda	playergfx	;look if we are game over
+    846  fac1		       f0 d3		      beq	gameover_resetter
+    847  fac3		       a9 80		      lda	#%10000000	;look if joystick is pushed right
+    848  fac5		       2c 80 02 	      bit	SWCHA
+    849  fac8		       f0 47		      beq	moveright
+    850  faca		       4a		      lsr		;look if joystick is pushed left (easier to do it this way)
+    851  facb		       2c 80 02 	      bit	SWCHA
+    852  face		       f0 1d		      beq	moveleft
+    853  fad0		       a6 89		      ldx	p0xpos	;same thing, but this time for horizontal motion
+    854  fad2		       4a		      lsr		;look if joystick is pushed down
+    855  fad3		       2c 80 02 	      bit	SWCHA
+    856  fad6		       f0 77		      beq	movedown
+    857  fad8		       4a		      lsr		;or finally, if up!
+    858  fad9		       2c 80 02 	      bit	SWCHA
+    859  fadc		       f0 54		      beq	moveup
+    860  fade							;nothing pressed, let's reset the time counter
+    861  fade		       a9 00		      lda	#0
+    862  fae0		       85 8c		      sta	timecnt
+    863  fae2							;IF COMPILE_SIZE = V4K	;and if we are in 4k
+    864  fae2		       85 19		      sta	AUDV0	;we silent the song
+    865  fae4		       85 17		      sta	AUDF0
+    866  fae6		       85 15		      sta	AUDC0
+    867  fae8		       c6 e4		      dec	songidx
+    868  faea							;ENDIF
+    869  faea		       4c 48 fa 	      jmp	eoupdate_player	;and we are finished
+    870  faed
+    871  faed				   moveleft
+    872  faed		       a9 10		      lda	#$10	;load the grafix for a player facing sidewards
+    873  faef		       85 98		      sta	playergfx
+    874  faf1		       a9 00		      lda	#%00000000	;mirror him the right way
+    875  faf3		       85 0b		      sta	REFP0
+    876  faf5		       c6 89		      dec	p0xpos	;decrease x pos
+    877  faf7		       30 6c		      bmi	move_room_left	;if you move out of the screen, move to the next screen
+    878  faf9		       a6 89		      ldx	p0xpos	;load the current x position
+    879  fafb		       20 aa fd 	      jsr	test_col_wall	;and look if there is a solid at that position
+    880  fafe				   end_move_room_left
+    881  fafe		       b0 0c		      bcs	moveleft_cancel	;if there is, then we cancel the move...
+    882  fb00				  -	      IF	COMPILE_VERSION = NTSC	;else, we start the waiting (must not last to long...)
+    883  fb00				  -			;lda #$0F
+    884  fb00					      ELSE
+    885  fb00							;lda #13
+    886  fb00					      ENDIF
+    887  fb00		       a5 e6		      lda	fpspeed
+    888  fb02		       85 8c		      sta	timecnt
+    889  fb04		       4c 48 fa 	      jmp	eoupdate_player	;and we are finished
+    890  fb07
+    891  fb07				   sound_cancel
+    892  fb07		       a9 00		      lda	#0	;no sound if we are in 4k
+    893  fb09				  -	      IF	COMPILE_SIZE = V4K
+    894  fb09				  -	      sta	AUDV0
+    895  fb09				  -	      dec	songidx
+    896  fb09					      ENDIF
+    897  fb09		       4c 48 fa 	      jmp	eoupdate_player
+    898  fb0c
+    899  fb0c				   moveleft_cancel		;oups, wrong move.
+    900  fb0c		       e6 89		      inc	p0xpos	;just reverse our desicion
+    901  fb0e		       4c 07 fb 	      jmp	sound_cancel	;and we make no noise
+    902  fb11
+    903  fb11				   moveright
+    904  fb11		       a9 08		      lda	#%00001000	;mirror him the right way
+    905  fb13		       85 0b		      sta	REFP0
+    906  fb15		       a9 10		      lda	#$10	;load the grafix for a player facing sidewards
+    907  fb17		       85 98		      sta	playergfx
+    908  fb19		       e6 89		      inc	p0xpos	;increase x pos
+    909  fb1b		       a6 89		      ldx	p0xpos
+    910  fb1d		       e0 08		      cpx	#8	;look if we just moved out of the screen
+    911  fb1f		       f0 56		      beq	move_room_right	;if you move out of the screen, move to the next screen
+    912  fb21		       20 aa fd 	      jsr	test_col_wall	;look if we are in something hard and solid
+    913  fb24		       b0 07		      bcs	moveright_cancel	;if it is the case... well, better step back
+    914  fb26				   end_move_room_right
+    915  fb26				  -	      IF	COMPILE_VERSION = NTSC	;now we wait a little
+    916  fb26				  -			;lda #$0F
+    917  fb26					      ELSE
+    918  fb26							;lda #13
+    919  fb26					      ENDIF		;...i said a little!
+    920  fb26		       a5 e6		      lda	fpspeed
+    921  fb28		       85 8c		      sta	timecnt
+    922  fb2a		       4c 48 fa 	      jmp	eoupdate_player	; and we are finished
+    923  fb2d
+    924  fb2d				   moveright_cancel		;oups...
+    925  fb2d		       c6 89		      dec	p0xpos	;just go back to our previous position
+    926  fb2f		       4c 07 fb 	      jmp	sound_cancel	;and cancel the noise
+    927  fb32
+    928  fb32				   moveup
+    929  fb32		       a9 28		      lda	#$28	;load the grafix for some player facing... up!
+    930  fb34		       85 98		      sta	playergfx
+    931  fb36		       e6 88		      inc	p0ypos	;increase the vertical position... don't forget image is reversed!
+    932  fb38		       a4 88		      ldy	p0ypos
+    933  fb3a		       c0 07		      cpy	#7	;look if we just moved out of the screen
+    934  fb3c		       f0 50		      beq	move_room_up	;if you move out of the screen, move to the next screen... thanks adventure for giving the idea
+    935  fb3e		       20 aa fd 	      jsr	test_col_wall	;look if we did a stupid move...
+    936  fb41		       b0 07		      bcs	moveup_cancel	;if it is the case, lets just step back
+    937  fb43				   end_move_room_up
+    938  fb43				  -	      IF	COMPILE_VERSION = NTSC	;else, put a little time before the next step
+    939  fb43				  -			;lda #$0F
+    940  fb43					      ELSE
+    941  fb43							;lda #13
+    942  fb43					      ENDIF
+    943  fb43		       a5 e6		      lda	fpspeed
+    944  fb45		       85 8c		      sta	timecnt
+    945  fb47		       4c 48 fa 	      jmp	eoupdate_player	;and we are ready!
+    946  fb4a
+    947  fb4a				   moveup_cancel		;why do i keep on stepping in walls all the time?
+    948  fb4a		       c6 88		      dec	p0ypos	;if only it was so easy in RL...
+    949  fb4c		       4c 07 fb 	      jmp	sound_cancel	;...then we didn't make all that kind of noises
+    950  fb4f
+    951  fb4f				   movedown
+    952  fb4f		       a9 20		      lda	#$20	;and now... the player looking down!
+    953  fb51		       85 98		      sta	playergfx
+    954  fb53		       c6 88		      dec	p0ypos	;decrease to step down... there is no justice in an atari vcs
+    955  fb55		       a4 88		      ldy	p0ypos
+    956  fb57		       f0 4e		      beq	move_room_down	;look if we are gone out of the screen...
+    957  fb59		       20 aa fd 	      jsr	test_col_wall	;...or inside a wall
+    958  fb5c		       b0 2b		      bcs	movedown_cancel	;it's time to start rerolling my loops!
+    959  fb5e				   end_move_room_down
+    960  fb5e				  -	      IF	COMPILE_VERSION = NTSC	;bla bla bla
+    961  fb5e				  -			;lda #$0F	;bla bla bla bla bla
+    962  fb5e					      ELSE
+    963  fb5e							;lda #13	;bla bla bla bla bla
+    964  fb5e					      ENDIF
+    965  fb5e		       a5 e6		      lda	fpspeed
+    966  fb60		       85 8c		      sta	timecnt	;bla bla bla
+    967  fb62		       4c 48 fa 	      jmp	eoupdate_player	;and bla
+    968  fb65
+    969  fb65
+    970  fb65				   move_room_left		;if we need to move the room left
+    971  fb65		       c6 8e		      dec	mapmapidx	;we decrease the room counter
+    972  fb67		       a9 07		      lda	#7	;move the player...
+    973  fb69		       85 89		      sta	p0xpos	;...to the right of the screen
+    974  fb6b		       85 8b		      sta	p0xposold	;...and make sure it don't jump back in a wall if he touch a monster
+    975  fb6d		       a9 ff		      lda	#$FF	;put a post-it to remain me to update the monsters
+    976  fb6f		       85 e1		      sta	doroomupd
+    977  fb71							;IF COMPILE_SIZE = V4K	;and if we are in 4k
+    978  fb71		       20 c0 fb 	      jsr	decrease_rc	;decrease our room counter
+    979  fb74							;ENDIF
+    980  fb74		       4c fe fa 	      jmp	end_move_room_left	;end and
+    981  fb77
+    982  fb77				   move_room_right		;same thing as above...
+    983  fb77		       e6 8e		      inc	mapmapidx	;...but replace left with right
+    984  fb79		       a9 00		      lda	#0	;...and right with left
+    985  fb7b		       85 89		      sta	p0xpos
+    986  fb7d		       85 8b		      sta	p0xposold
+    987  fb7f		       a9 ff		      lda	#$FF
+    988  fb81		       85 e1		      sta	doroomupd
+    989  fb83							;IF COMPILE_SIZE = V4K	;and if we are in 4k
+    990  fb83		       20 c0 fb 	      jsr	decrease_rc	;decrease our room counter
+    991  fb86							;ENDIF
+    992  fb86		       4c 26 fb 	      jmp	end_move_room_right
+    993  fb89
+    994  fb89							;what is it doing there? Oh! My branches are to far away!
+    995  fb89				   movedown_cancel		;if we bumped in a wall moving down
+    996  fb89		       e6 88		      inc	p0ypos	;then we move back
+    997  fb8b		       4c 07 fb 	      jmp	sound_cancel	;and don't make noise anymore
+    998  fb8e
+    999  fb8e
+   1000  fb8e				   move_room_up 		;moving rooms up is a little more complicated
+   1001  fb8e		       a5 8e		      lda	mapmapidx	;we load the map index
+   1002  fb90		       18		      clc
+   1003  fb91		       e9 0f		      sbc	#$F	;substrace 16 from it
+   1004  fb93		       29 7f		      and	#$7F	;make sure it wraps around at the right time
+   1005  fb95		       85 8e		      sta	mapmapidx	;and save it
+   1006  fb97		       a9 01		      lda	#1	;then we define the new position for the player
+   1007  fb99		       85 88		      sta	p0ypos
+   1008  fb9b		       85 8a		      sta	p0yposold	;and the old one too...
+   1009  fb9d		       a9 ff		      lda	#$FF
+   1010  fb9f		       85 e1		      sta	doroomupd	;remind to update the monsters
+   1011  fba1							;IF COMPILE_SIZE = V4K	;and if we are in 4k
+   1012  fba1		       20 c0 fb 	      jsr	decrease_rc	;decrease our room counter
+   1013  fba4							;ENDIF
+   1014  fba4		       4c 43 fb 	      jmp	end_move_room_up	;and we are ready!
+   1015  fba7
+   1016  fba7				   move_room_down		;and moving rooms down is the same story
+   1017  fba7		       a5 8e		      lda	mapmapidx
+   1018  fba9		       18		      clc
+   1019  fbaa		       69 10		      adc	#$10	;substraction instead of adding, for moving down instead of up
+   1020  fbac		       29 7f		      and	#$7F	;always making sure no wrap-around occurs
+   1021  fbae		       85 8e		      sta	mapmapidx	;and saving it the same way
+   1022  fbb0		       a9 06		      lda	#6	;this time, we reposition the player on the upper-side of the screen
+   1023  fbb2		       85 88		      sta	p0ypos
+   1024  fbb4		       85 8a		      sta	p0yposold	;and the old player too
+   1025  fbb6		       a9 ff		      lda	#$FF	;and finally
+   1026  fbb8		       85 e1		      sta	doroomupd	;reminds us to update the monsters
+   1027  fbba							;IF COMPILE_SIZE = V4K	;and if we are in 4k
+   1028  fbba		       20 c0 fb 	      jsr	decrease_rc	;decrease our room counter
+   1029  fbbd							;ENDIF
+   1030  fbbd		       4c 5e fb 	      jmp	end_move_room_down	;and to move all down
+   1031  fbc0
+   1032  fbc0				  -	      IF	COMPILE_SIZE = 6	;=if we are in 4k
+   1033  fbc0				  -decrease_rc
+   1034  fbc0				  -	      sed
+   1035  fbc0				  -	      clc
+   1036  fbc0				  -	      lda	Diam
+   1037  fbc0				  -	      sbc	#0
+   1038  fbc0				  -	      sta	Diam
+   1039  fbc0				  -	      bne	decrease_rc_end	;if we took too much time
+   1040  fbc0				  -	      sta	playergfx	;time is up, so let's quit
+   1041  fbc0				  -
+   1042  fbc0				  -decrease_rc_end
+   1043  fbc0				  -	      cld
+   1044  fbc0				  -	      clc
+   1045  fbc0				  -	      rts
+   1046  fbc0					      ELSE
+   1047  fbc0				   decrease_rc
+   1048  fbc0		       18		      clc
+   1049  fbc1		       f8		      sed
+   1050  fbc2		       a5 d1		      lda	Diam
+   1051  fbc4		       e9 00		      sbc	#0
+   1052  fbc6		       d8		      cld
+   1053  fbc7		       85 d1		      sta	Diam
+   1054  fbc9		       f0 0b		      beq	game_over
+   1055  fbcb		       4a		      lsr
+   1056  fbcc		       4a		      lsr
+   1057  fbcd		       4a		      lsr
+   1058  fbce		       4a		      lsr
+   1059  fbcf		       4a		      lsr
+   1060  fbd0		       18		      clc
+   1061  fbd1				  -	      IF	COMPILE_VERSION = NTSC	;load the background color for the healthbar
+   1062  fbd1				  -	      adc	#$C
+   1063  fbd1					      ELSE
+   1064  fbd1		       69 08		      adc	#8
+   1065  fbd3					      ENDIF
+   1066  fbd3		       85 e6		      sta	fpspeed
+   1067  fbd5		       60		      rts
+   1068  fbd6				   game_over
+   1069  fbd6		       85 98		      sta	playergfx	;time is up, so let's quit
+   1070  fbd8		       60		      rts
+   1071  fbd9					      ENDIF
+   1072  fbd9
+   1073  fbd9							;------------------------------------------------
+   1074  fbd9				   VerticalBlank2		;next stage of the vertical blank
+   1075  fbd9		       a9 06		      lda	#$06	;look if it is time to update the monsters...
+   1076  fbdb		       c5 8c		      cmp	timecnt
+   1077  fbdd		       d0 43		      bne	VerticalBlank4_prep
+   1078  fbdf		       a9 07		      lda	#7	;for each monster
+   1079  fbe1		       85 82		      sta	tmp1
+   1080  fbe3				   monloop
+   1081  fbe3		       20 ed fb 	      jsr	monupdate	;update the monster
+   1082  fbe6		       c6 82		      dec	tmp1	;decrease the counter
+   1083  fbe8		       d0 f9		      bne	monloop	;and if we didn't update them all, continue
+   1084  fbea		       4c 22 fc 	      jmp	VerticalBlank4	;finally, go to the next stage of vertical blanking
+   1085  fbed							;------------------------------------------------
+   1086  fbed				   monupdate
+   1087  fbed		       a6 82		      ldx	tmp1	;load the monster counter
+   1088  fbef		       a9 7f		      lda	#$7F
+   1089  fbf1		       d5 b8		      cmp	mongfx,x	;look if the monster... is a monster!
+   1090  fbf3		       30 29		      bmi	end_mon_upd	;if not, end the update work
+   1091  fbf5		       b5 b0		      lda	monsterx,x
+   1092  fbf7		       e5 89		      sbc	p0xpos	;look which side to move to
+   1093  fbf9		       f0 23		      beq	end_mon_upd	;if we are on the same pos as the player, we don't have to do anything
+   1094  fbfb		       b0 0c		      bcs	mon_move_left	;elif we are on the right of the player, move left	(modify this if you are an ULTRAWHIMP)
+   1095  fbfd
+   1096  fbfd				   mon_move_right		;if we need to move to the right,
+   1097  fbfd		       f6 b0		      inc	monsterx,x	;we increase the position of the respective monster
+   1098  fbff		       8a		      txa
+   1099  fc00		       a8		      tay		;move the monster index to the Y register
+   1100  fc01		       b6 b0		      ldx	monsterx,y	;load the new position for the monster to the x register
+   1101  fc03		       20 aa fd 	      jsr	test_col_wall	;test if there is something there
+   1102  fc06		       b0 0d		      bcs	mon_move_right_cancel	;and if it is the case, move back
+   1103  fc08		       60		      rts		;else, we return
+   1104  fc09
+   1105  fc09				   mon_move_left		;if we need to move to the left
+   1106  fc09		       d6 b0		      dec	monsterx,x	;we decrease the position of the respective monster
+   1107  fc0b		       8a		      txa
+   1108  fc0c		       a8		      tay		;move the monster index to the Y register
+   1109  fc0d		       b6 b0		      ldx	monsterx,y	;load the new position for the monster to the x register
+   1110  fc0f		       20 aa fd 	      jsr	test_col_wall	;test if there is something there
+   1111  fc12		       b0 06		      bcs	mon_move_left_cancel	;and if it is the case, move back
+   1112  fc14		       60		      rts		;else, we return
+   1113  fc15
+   1114  fc15				   mon_move_right_cancel
+   1115  fc15		       a6 82		      ldx	tmp1	;let's move the monster back
+   1116  fc17		       d6 b0		      dec	monsterx,x	;we just decrease it
+   1117  fc19		       60		      rts		;and return
+   1118  fc1a
+   1119  fc1a				   mon_move_left_cancel
+   1120  fc1a		       a6 82		      ldx	tmp1	;same thing as above
+   1121  fc1c		       f6 b0		      inc	monsterx,x	;but with inc instead of dec
+   1122  fc1e							;this is wonderful with asm... you can reuse code for more than 1 routine!
+   1123  fc1e				   end_mon_upd
+   1124  fc1e		       a6 82		      ldx	tmp1	;reload a x pointer
+   1125  fc20		       60		      rts		;and return
+   1126  fc21							;------------------------------------------------
+   1127  fc21				   montestcol		;what am i exactly trying to do here?
+   1128  fc21							;lda #$30
+   1129  fc21							;cmp mongfx,x
+   1130  fc21							;beq montestcol_end
+   1131  fc21							;sta monsterx,x
+   1132  fc21				   montestcol_end		;must be something pretty nice... i can't remember
+   1133  fc21		       60		      rts
+   1134  fc22							;------------------------------------------------
+   1135  fc22				   VerticalBlank4_prep
+   1136  fc22							;historically, i had some code here, but the label is to be removed, and the referecnces to be replaced
+   1137  fc22				   VerticalBlank4
+   1138  fc22							;same thing here...
+   1139  fc22							;jmp VerticalBlank5
+   1140  fc22							;------------------------------------------------
+   1141  fc22				   VerticalBlank5
+   1142  fc22							;we are at the end of the first part of the vertical blank.
+   1143  fc22				   OSwait		;so, we are going to wait until our timer halts to signal the time for the main vertical blank
+   1144  fc22		       85 02		      sta	WSYNC	; Wait for SYNC (halts CPU until end of scanline)
+   1145  fc24		       ad 84 02 	      lda	INTIM	; Check the timer
+   1146  fc27		       10 f9		      bpl	OSwait	; Branch if its Not Equal to 0
+   1147  fc29
+   1148  fc29		       a9 00		      lda	#0	;clear the playfield registers
+   1149  fc2b		       a2 02		      ldx	#2
+   1150  fc2d		       85 0e		      sta	PF1
+   1151  fc2f		       85 0d		      sta	PF0
+   1152  fc31		       85 81		      sta	pf1mirror
+   1153  fc33		       85 83		      sta	pf3mirror
+   1154  fc35		       85 0f		      sta	PF2	;... all of them
+   1155  fc37		       86 00		      stx	VSYNC	;signal the start of a vertical sync
+   1156  fc39
+   1157  fc39		       85 02		      sta	WSYNC
+   1158  fc3b		       85 02		      sta	WSYNC
+   1159  fc3d		       85 02		      sta	WSYNC	; we do 3 scanlines of VSYNC signal
+   1160  fc3f
+   1161  fc3f		       a9 00		      lda	#0
+   1162  fc41		       85 00		      sta	VSYNC	;and signal the end of that same vertical sync
+   1163  fc43
+   1164  fc43							;now, we load the time to wait until the upper side of the picture is ready
+   1165  fc43				  -	      IF	COMPILE_VERSION = NTSC
+   1166  fc43				  -	      lda	#35	;good luck... both versions need to wait the same time!
+   1167  fc43					      ELSE
+   1168  fc43		       a9 23		      lda	#35	;well, it isn't honest to omit the COMPILE_VERSION part...
+   1169  fc45					      ENDIF
+   1170  fc45
+   1171  fc45		       8d 96 02 	      sta	TIM64T	;and put it in our friend the timer
+   1172  fc48
+   1173  fc48							;------------------------------------------------
+   1174  fc48							; load the screen map
+   1175  fc48		       a4 8e		      ldy	mapmapidx	;load the index of the map map
+   1176  fc4a
+   1177  fc4a		       b9 80 fe 	      lda	mapmap,y	;load the index of the map
+   1178  fc4d							;now some magic to transform it into a tile type and a index
+   1179  fc4d		       18		      clc
+   1180  fc4e		       4a		      lsr		;it's a kind of magic
+   1181  fc4f		       29 30		      and	#%00110000
+   1182  fc51		       18		      clc
+   1183  fc52		       69 c0		      adc	#$C0
+   1184  fc54		       85 94		      sta	screentile
+   1185  fc56		       69 08		      adc	#8	;well, this part finally isn't difficult to explain
+   1186  fc58							;in fact, the color map is always 8 bytes away from the tile grafix
+   1187  fc58							;so we add 8 to it
+   1188  fc58		       85 9e		      sta	tilecolmir	;and save it
+   1189  fc5a
+   1190  fc5a		       4a		      lsr		;now, load the type of tile
+   1191  fc5b		       4a		      lsr
+   1192  fc5c		       4a		      lsr		;it's 1/16th of the tile index
+   1193  fc5d		       4a		      lsr
+   1194  fc5e		       29 03		      and	#%00000011
+   1195  fc60		       aa		      tax
+   1196  fc61		       bd cd fd 	      lda	BGcolors,x	;and it's loaded from a mini-array with 4 values
+   1197  fc64		       85 8f		      sta	BGcolor
+   1198  fc66
+   1199  fc66		       a9 08		      lda	#%00001000	;look if we are in black and white
+   1200  fc68		       2c 82 02 	      bit	SWCHB
+   1201  fc6b		       d0 0d		      bne	dont_make_bw_back	;if not, no need to black_and_white it
+   1202  fc6d		       a5 8f		      lda	BGcolor	;else we make it bw
+   1203  fc6f		       29 0e		      and	#%00001110
+   1204  fc71		       85 8f		      sta	BGcolor
+   1205  fc73		       a9 0e		      lda	#%00001110	;and we store a black and white mask for the rest of us
+   1206  fc75		       85 90		      sta	colmask
+   1207  fc77		       4c 7e fc 	      jmp	end_make_bw
+   1208  fc7a				   dont_make_bw_back
+   1209  fc7a		       a9 fe		      lda	#%11111110	;else we load just an empty mask... well, almost empty!
+   1210  fc7c		       85 90		      sta	colmask
+   1211  fc7e							;and so, we have the colors and tile types loaded...
+   1212  fc7e				   end_make_bw
+   1213  fc7e							;this was the easy part...
+   1214  fc7e							;but it's now that the REAL weird things start to happen...
+   1215  fc7e							;we are going to transform a 4x8 bit value into a 6x6 value!
+   1216  fc7e							;...which is then transformed by the kernel into a 8x6 tilemap
+   1217  fc7e							;the only thing logical here is that a 0 is a clear tile, and a 1 a filled tile
+   1218  fc7e							;however, to explain the order of the bits is a different story...
+   1219  fc7e		       b9 80 fe 	      lda	mapmap,y	;load the index for the grafix source
+   1220  fc81		       0a		      asl		;remove the first 2 bits
+   1221  fc82		       0a		      asl
+   1222  fc83		       29 7f		      and	#$7F	;make it point to the right place
+   1223  fc85		       aa		      tax		;and make it an index
+   1224  fc86		       bd 00 fe 	      lda	mapmapgfx+0,x	;okay... load the first value
+   1225  fc89		       0a		      asl		;remove the first 2 bits
+   1226  fc8a		       0a		      asl
+   1227  fc8b		       85 a9		      sta	tilemap+1	;this is the first tile
+   1228  fc8d
+   1229  fc8d		       bd 00 fe 	      lda	mapmapgfx+0,x	;load the first value again
+   1230  fc90		       29 c0		      and	#%11000000	; and the high part of it
+   1231  fc92		       85 ab		      sta	tilemap+3	; is going to serve somehow
+   1232  fc94		       85 ac		      sta	tilemap+4	; in the middle 2 tiles
+   1233  fc96
+   1234  fc96		       bd 01 fe 	      lda	mapmapgfx+1,x	;load the second value
+   1235  fc99		       0a		      asl		;remove the first 2 bits
+   1236  fc9a		       0a		      asl
+   1237  fc9b		       85 aa		      sta	tilemap+2	;and store it as the second row
+   1238  fc9d
+   1239  fc9d		       bd 01 fe 	      lda	mapmapgfx+1,x	;load the second value again
+   1240  fca0		       29 c0		      and	#%11000000	;...well, just it's first 2 bits...
+   1241  fca2		       4a		      lsr		;shift it right a bit
+   1242  fca3		       4a		      lsr
+   1243  fca4		       05 ab		      ora	tilemap+3	;and it is only for the third row
+   1244  fca6		       85 ab		      sta	tilemap+3	;yaaahhh... i like that
+   1245  fca8
+   1246  fca8		       bd 02 fe 	      lda	mapmapgfx+2,x	;load the third value
+   1247  fcab		       0a		      asl		;shift it right like the others
+   1248  fcac		       0a		      asl
+   1249  fcad		       85 ad		      sta	tilemap+5	;and this is the 5th row
+   1250  fcaf
+   1251  fcaf		       bd 02 fe 	      lda	mapmapgfx+2,x	;load the third value again
+   1252  fcb2		       29 c0		      and	#%11000000	;...the first 2 bits...
+   1253  fcb4		       4a		      lsr		;shift them a bit (or 2)
+   1254  fcb5		       4a		      lsr
+   1255  fcb6		       05 ac		      ora	tilemap+4	;and use them for the fourth row
+   1256  fcb8		       85 ac		      sta	tilemap+4
+   1257  fcba
+   1258  fcba		       bd 03 fe 	      lda	mapmapgfx+3,x	;now, load the last value
+   1259  fcbd		       0a		      asl		;impossible to reroll this loop
+   1260  fcbe		       0a		      asl
+   1261  fcbf		       85 ae		      sta	tilemap+6	;the 6th row is defined
+   1262  fcc1
+   1263  fcc1		       bd 03 fe 	      lda	mapmapgfx+3,x	;load that last value again
+   1264  fcc4		       29 c0		      and	#%11000000	;and it
+   1265  fcc6		       4a		      lsr		;do some shifting
+   1266  fcc7		       4a		      lsr
+   1267  fcc8		       4a		      lsr
+   1268  fcc9		       4a		      lsr
+   1269  fcca		       85 82		      sta	tmp1	;store it temporary
+   1270  fccc		       05 ab		      ora	tilemap+3	;use it for the 3rd row
+   1271  fcce		       85 ab		      sta	tilemap+3
+   1272  fcd0		       a5 82		      lda	tmp1	;reload the value
+   1273  fcd2		       05 ac		      ora	tilemap+4	;use it for the 4rd row too
+   1274  fcd4		       85 ac		      sta	tilemap+4	;et voila!
+   1275  fcd6
+   1276  fcd6		       a5 86		      lda	seed
+   1277  fcd8		       29 7f		      and	#$7F
+   1278  fcda		       85 86		      sta	seed
+   1279  fcdc		       c4 86		      cpy	seed	;this must be my code for the seed
+   1280  fcde		       d0 0f		      bne	dont_load_whirl	;but no...
+   1281  fce0							;it doesn't seems to work
+   1282  fce0		       a2 03		      ldx	#3	;now, we place the whirl on the screen
+   1283  fce2		       a0 03		      ldy	#3
+   1284  fce4		       20 aa fd 	      jsr	test_col_wall	;if there isn't already something there
+   1285  fce7		       b0 27		      bcs	randomnize_seed	;else, we choise a new position
+   1286  fce9		       86 b3		      stx	monsterx+3	;else, we save it as if it was a monster
+   1287  fceb		       a9 a0		      lda	#$A0
+   1288  fced		       85 bb		      sta	mongfx+3	;and store its grafix too
+   1289  fcef
+   1290  fcef				   dont_load_whirl
+   1291  fcef		       98		      tya		;use the room as a seed
+   1292  fcf0		       20 c4 fd 	      jsr	randomnize	;well, more or less
+   1293  fcf3		       a5 e1		      lda	doroomupd	;look if we have to update the monster
+   1294  fcf5		       f0 0b		      beq	dont_load_monsters	;else, we beat it (ps: omit this if you are really sure you ain't a whimp)
+   1295  fcf7		       20 32 fd 	      jsr	load_monsters	;self-explaining
+   1296  fcfa		       ad 82 02 	      lda	SWCHB	;if the player IS a whimp
+   1297  fcfd		       10 03		      bpl	dont_load_monsters	;we are finished
+   1298  fcff		       20 41 fd 	      jsr	load_monsters_hot	;else, do it again
+   1299  fd02
+   1300  fd02				   dont_load_monsters
+   1301  fd02		       a9 00		      lda	#0	;notify ourself we did the monsters
+   1302  fd04		       85 e1		      sta	doroomupd
+   1303  fd06		       a9 01		      lda	#%00000001	;if the player doesn't want to restart the game
+   1304  fd08		       2c 82 02 	      bit	SWCHB
+   1305  fd0b		       d0 0a		      bne	VerticalBlank	;rego to the main part. (invert this if you are a masochist)
+   1306  fd0d		       4c 08 f8 	      jmp	soft_reset	;else reset the game
+   1307  fd10
+   1308  fd10							;------------------------------------------------
+   1309  fd10							;a little routine to randominse the seed
+   1310  fd10				   randomnize_seed
+   1311  fd10		       a5 f0		      lda	nothing	;load a random number
+   1312  fd12		       85 86		      sta	seed	;and store it in the seed
+   1313  fd14		       4c 17 fd 	      jmp	VerticalBlank	;and then, restart the vertical blanking
+   1314  fd17							;------------------------------------------------
+   1315  fd17							;wait for timer 0
+   1316  fd17				   VerticalBlank
+   1317  fd17		       85 02		      sta	WSYNC	; Wait for HSYNC
+   1318  fd19		       ad 84 02 	      lda	INTIM	; Check the timer
+   1319  fd1c		       10 f9		      bpl	VerticalBlank	; Branch if its Not Equal to 0
+   1320  fd1e
+   1321  fd1e		       a9 00		      lda	#00	;clear the vblank
+   1322  fd20		       85 01		      sta	VBLANK
+   1323  fd22		       a9 00		      lda	#00	;blacks the background color
+   1324  fd24		       85 09		      sta	COLUBK
+   1325  fd26		       a9 31		      lda	#%00110001	;invoque a mirroring playfield
+   1326  fd28		       85 0a		      sta	CTRLPF
+   1327  fd2a							;lda #%00000000	;and setup the player proprieties
+   1328  fd2a							;sta NUSIZ0
+   1329  fd2a							;sta NUSIZ1
+   1330  fd2a
+   1331  fd2a
+   1332  fd2a		       a2 06		      ldx	#6	;load the number of rows
+   1333  fd2c		       a0 07		      ldy	#7	; and the number of lines per row
+   1334  fd2e		       4c 4d f8 	      jmp	restart_kernel	;and restart
+   1335  fd31
+   1336  fd31				   end_of_load_monsters
+   1337  fd31		       60		      rts		;a little rts in the middle of nowhere... we all like that!
+   1338  fd32
+   1339  fd32				   load_monsters
+   1340  fd32		       a9 00		      lda	#0	;first, we clear all current monsters
+   1341  fd34		       a2 06		      ldx	#6
+   1342  fd36				   clearmon_loop
+   1343  fd36		       95 b8		      sta	mongfx,x
+   1344  fd38		       ca		      dex
+   1345  fd39		       d0 fb		      bne	clearmon_loop
+   1346  fd3b
+   1347  fd3b		       a5 8e		      lda	mapmapidx	;load the room index as a seed
+   1348  fd3d		       45 86		      eor	seed	;well, almost. The current seed is a factor too
+   1349  fd3f		       85 82		      sta	tmp1	;finally, we store it temporary
+   1350  fd41
+   1351  fd41				   load_monsters_hot		;jump here if you already have a seed
+   1352  fd41		       a5 94		      lda	screentile	;load type of room
+   1353  fd43		       49 80		      eor	#$80	;xor of C0 (pos of room gfx) with 40 (pos of monster gfx)
+   1354  fd45		       85 e2		      sta	monstertype	;save it as the type of monster
+   1355  fd47		       a5 82		      lda	tmp1	;laod the seed
+   1356  fd49		       4c 51 fd 	      jmp	testter	;and jump in the middle of nowhere
+   1357  fd4c
+   1358  fd4c				   loadmon_loop
+   1359  fd4c		       20 bd fd 	      jsr	lfsr	;randomnize the seed a little bit
+   1360  fd4f		       90 e0		      bcc	end_of_load_monsters	;carried out half of the time
+   1361  fd51				   testter
+   1362  fd51		       20 c4 fd 	      jsr	randomnize	;randomnize the seed a lot
+   1363  fd54		       a8		      tay
+   1364  fd55		       29 07		      and	#%00000111	;load x pos
+   1365  fd57		       85 85		      sta	tmp3
+   1366  fd59		       98		      tya
+   1367  fd5a		       20 c4 fd 	      jsr	randomnize	;randomnize the seed a lot again
+   1368  fd5d		       85 82		      sta	tmp1
+   1369  fd5f		       29 07		      and	#%00000111	;load y pos
+   1370  fd61		       85 84		      sta	tmp2
+   1371  fd63		       a8		      tay
+   1372  fd64		       c9 02		      cmp	#2	;if the y position is larger than 6
+   1373  fd66		       30 e4		      bmi	loadmon_loop	;then retry
+   1374  fd68		       a6 85		      ldx	tmp3
+   1375  fd6a		       20 aa fd 	      jsr	test_col_wall	;if collisation with wall
+   1376  fd6d		       b0 dd		      bcs	loadmon_loop	;then retry
+   1377  fd6f		       a4 84		      ldy	tmp2	;load the positions again
+   1378  fd71		       a6 85		      ldx	tmp3
+   1379  fd73		       a5 e2		      lda	monstertype	;load the type of monster
+   1380  fd75		       99 b8 00 	      sta	mongfx,y	;and save it
+   1381  fd78		       96 b0		      stx	monsterx,y	;store the x position
+   1382  fd7a		       a5 82		      lda	tmp1	;reload the seed
+   1383  fd7c		       20 c4 fd 	      jsr	randomnize	;randomnise
+   1384  fd7f		       aa		      tax
+   1385  fd80		       29 03		      and	#%00000011	;make it a little lower
+   1386  fd82		       99 c8 00 	      sta	monlives,y	;and save it
+   1387  fd85		       8a		      txa
+   1388  fd86		       4c 4c fd 	      jmp	loadmon_loop	;and restart the loop
+   1389  fd89
+   1390  fd89							;---------------------------------------------
+   1391  fd89							;this routine decrease the life by 1 if the player is hit
+   1392  fd89				   decrease_lives		;and it is a unrolled loop again... because of that stupid mirroring of stella's registers
+   1393  fd89		       46 c5		      lsr	healthbar+5	;decrease the first part of the healthbar
+   1394  fd8b		       d0 1c		      bne	end_decrease_lives	;íf it isn't empty, we are ready
+   1395  fd8d		       06 c4		      asl	healthbar+4	;decrease the second part of the healthbar
+   1396  fd8f		       d0 18		      bne	end_decrease_lives	;íf it isn't empty, we are ready
+   1397  fd91		       46 c3		      lsr	healthbar+3	;ect...
+   1398  fd93		       d0 14		      bne	end_decrease_lives
+   1399  fd95		       46 c2		      lsr	healthbar+2
+   1400  fd97		       d0 10		      bne	end_decrease_lives
+   1401  fd99		       06 c1		      asl	healthbar+1
+   1402  fd9b		       d0 0c		      bne	end_decrease_lives
+   1403  fd9d		       46 c0		      lsr	healthbar	;for the last healthbarpart, we decrease it
+   1404  fd9f		       a5 c0		      lda	healthbar
+   1405  fda1		       c9 07		      cmp	#$07	;look if it isn't completly hidden
+   1406  fda3		       d0 04		      bne	end_decrease_lives
+   1407  fda5				   gameover		;and if there is only the hidden part full, the healthbar is considered empty, and the player wheens
+   1408  fda5		       a9 00		      lda	#00	;we effectivly says there is no player anymore
+   1409  fda7		       85 98		      sta	playergfx	;by putting it's sprite on 0
+   1410  fda9				   end_decrease_lives
+   1411  fda9		       60		      rts		;and we return
+   1412  fdaa
+   1413  fdaa							;this little routine test if the instance is touching a wall
+   1414  fdaa							;Y=y position	  X=x position	 carry set=collision
+   1415  fdaa				   test_col_wall
+   1416  fdaa		       b9 a8 00 	      lda	tilemap,y	;we load the tilemap
+   1417  fdad		       bc b5 fd 	      ldy	test_col_wall_table,x	;we map it to a special table, which is going to traduct this all
+   1418  fdb0				   test_col_wall_loop
+   1419  fdb0		       0a		      asl		;we shift it right the right number of times
+   1420  fdb1		       88		      dey		;doen't modify the carry set by the shifting
+   1421  fdb2		       d0 fc		      bne	test_col_wall_loop	;and at the end, the carry will end at the right place
+   1422  fdb4		       60		      rts
+   1423  fdb5
+   1424  fdb5				   test_col_wall_table		;the number of times we need to shift
+   1425  fdb5							;	 875612
+   1426  fdb5							;	 874312
+   1427  fdb5		       05		      .byte.b	5	;1 -> 000010
+   1428  fdb6		       06		      .byte.b	6	;2 -> 000001
+   1429  fdb7		       04		      .byte.b	4	;3 -> 000100
+   1430  fdb8		       03		      .byte.b	3	;4 -> 001000
+   1431  fdb9		       03		      .byte.b	3	;5 -> 001000
+   1432  fdba		       04		      .byte.b	4	;6 -> 000100
+   1433  fdbb		       02		      .byte.b	2	;7 -> 010000
+   1434  fdbc		       01		      .byte.b	1	;8 -> 100000
+   1435  fdbd
+   1436  fdbd							;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   1437  fdbd							; linear feedback shift register
+   1438  fdbd							;  this subroutine does a LFSR on the
+   1439  fdbd							;  accumulator
+   1440  fdbd							; input
+   1441  fdbd							;  A - the seed
+   1442  fdbd							; returns:
+   1443  fdbd							;  A - the result of the LFSR
+   1444  fdbd							;  carry - if the LFSR eor was performed
+   1445  fdbd							;   (random dependent on the accumulator)
+   1446  fdbd				   lfsr
+   1447  fdbd		       4a		      lsr
+   1448  fdbe		       90 03		      bcc	noeor
+   1449  fdc0		       49 b4		      eor	#$B4
+   1450  fdc2		       38		      sec
+   1451  fdc3				   noeor
+   1452  fdc3		       60		      rts
+   1453  fdc4
+   1454  fdc4				   randomnize
+   1455  fdc4		       a2 09		      ldx	#9
+   1456  fdc6				   randomnize_loop		;randomnize a bit
+   1457  fdc6		       20 bd fd 	      jsr	lfsr
+   1458  fdc9		       ca		      dex
+   1459  fdca		       d0 fa		      bne	randomnize_loop
+   1460  fdcc		       60		      rts
+   1461  fdcd
+   1462  fdcd
+   1463  fdcd							;--------------------------------------
+   1464  fdcd				   BGcolors
+   1465  fdcd							;this are the colors for the background of the game
+   1466  fdcd				  -	      IF	COMPILE_VERSION = NTSC
+   1467  fdcd				  -	      .byte	$CF
+   1468  fdcd				  -	      .byte	$FF
+   1469  fdcd				  -	      .byte	$FF
+   1470  fdcd				  -	      .byte	$0F
+   1471  fdcd					      ELSE
+   1472  fdcd		       3f		      .byte.b	$3F
+   1473  fdce		       2f		      .byte.b	$2F
+   1474  fdcf		       2f		      .byte.b	$2F
+   1475  fdd0		       0f		      .byte.b	$0F
+   1476  fdd1					      ENDIF
+   1477  fdd1
+   1478  fdd1				  -	      IF	COMPILE_SIZE = V4K
+   1479  fdd1				  -			;this are, if needed, the digits for the score
+   1480  fdd1				  -DigitGfx
+   1481  fdd1				  -	      .byte	#%00000111
+   1482  fdd1				  -	      .byte	#%00000101
+   1483  fdd1				  -	      .byte	#%00000101
+   1484  fdd1				  -	      .byte	#%00000101
+   1485  fdd1				  -	      .byte	#%00000111
+   1486  fdd1				  -
+   1487  fdd1				  -	      .byte	#%00010010
+   1488  fdd1				  -	      .byte	#%00010010
+   1489  fdd1				  -	      .byte	#%00010010
+   1490  fdd1				  -	      .byte	#%00010010
+   1491  fdd1				  -	      .byte	#%00010010
+   1492  fdd1				  -
+   1493  fdd1				  -	      .byte	#%01110111
+   1494  fdd1				  -	      .byte	#%00010001
+   1495  fdd1				  -	      .byte	#%01110111
+   1496  fdd1				  -	      .byte	#%01000100
+   1497  fdd1				  -	      .byte	#%01110111
+   1498  fdd1				  -
+   1499  fdd1				  -	      .byte	#%01110111
+   1500  fdd1				  -	      .byte	#%00010001
+   1501  fdd1				  -	      .byte	#%01110111
+   1502  fdd1				  -	      .byte	#%00010001
+   1503  fdd1				  -	      .byte	#%01110111
+   1504  fdd1				  -
+   1505  fdd1				  -	      .byte	#%01010101
+   1506  fdd1				  -	      .byte	#%01010101
+   1507  fdd1				  -	      .byte	#%01110111
+   1508  fdd1				  -	      .byte	#%00010001
+   1509  fdd1				  -	      .byte	#%00010001
+   1510  fdd1				  -
+   1511  fdd1				  -	      .byte	#%01110111
+   1512  fdd1				  -	      .byte	#%01000100
+   1513  fdd1				  -	      .byte	#%01110111
+   1514  fdd1				  -	      .byte	#%00010001
+   1515  fdd1				  -	      .byte	#%01110111
+   1516  fdd1				  -
+   1517  fdd1				  -	      .byte	#%01110111
+   1518  fdd1				  -	      .byte	#%01000100
+   1519  fdd1				  -	      .byte	#%01110111
+   1520  fdd1				  -	      .byte	#%01010101
+   1521  fdd1				  -	      .byte	#%01110111
+   1522  fdd1				  -
+   1523  fdd1				  -	      .byte	#%01110111
+   1524  fdd1				  -	      .byte	#%00010001
+   1525  fdd1				  -	      .byte	#%01110111
+   1526  fdd1				  -	      .byte	#%00010001
+   1527  fdd1				  -	      .byte	#%00010001
+   1528  fdd1				  -
+   1529  fdd1				  -	      .byte	#%01110111
+   1530  fdd1				  -	      .byte	#%01010101
+   1531  fdd1				  -	      .byte	#%01110111
+   1532  fdd1				  -	      .byte	#%01010101
+   1533  fdd1				  -	      .byte	#%01110111
+   1534  fdd1				  -
+   1535  fdd1				  -	      .byte	#%01110111
+   1536  fdd1				  -	      .byte	#%01010101
+   1537  fdd1				  -	      .byte	#%01110111
+   1538  fdd1				  -	      .byte	#%00010001
+   1539  fdd1				  -	      .byte	#%01110111
+   1540  fdd1				  -			;this is the song. it is one from my own compositions... not a very good one, because i'm not a very good composer, but it will do the trick
+   1541  fdd1				  -song
+   1542  fdd1				  -	      .byte	#17
+   1543  fdd1				  -	      .byte	#17
+   1544  fdd1				  -	      .byte	#14
+   1545  fdd1				  -	      .byte	#15
+   1546  fdd1				  -	      .byte	#15
+   1547  fdd1				  -	      .byte	#14
+   1548  fdd1				  -	      .byte	#17
+   1549  fdd1				  -	      .byte	#15
+   1550  fdd1				  -
+   1551  fdd1				  -	      .byte	#17
+   1552  fdd1				  -	      .byte	#17
+   1553  fdd1				  -	      .byte	#14
+   1554  fdd1				  -	      .byte	#15
+   1555  fdd1				  -	      .byte	#15
+   1556  fdd1				  -	      .byte	#14
+   1557  fdd1				  -	      .byte	#17
+   1558  fdd1				  -	      .byte	#17
+   1559  fdd1				  -
+   1560  fdd1				  -	      .byte	#17
+   1561  fdd1				  -	      .byte	#17
+   1562  fdd1				  -	      .byte	#14
+   1563  fdd1				  -	      .byte	#15
+   1564  fdd1				  -	      .byte	#15
+   1565  fdd1				  -	      .byte	#14
+   1566  fdd1				  -	      .byte	#17
+   1567  fdd1				  -	      .byte	#15
+   1568  fdd1				  -
+   1569  fdd1				  -	      .byte	#14
+   1570  fdd1				  -	      .byte	#14
+   1571  fdd1				  -	      .byte	#15
+   1572  fdd1				  -	      .byte	#15
+   1573  fdd1				  -	      .byte	#16
+   1574  fdd1				  -	      .byte	#16
+   1575  fdd1				  -	      .byte	#17
+   1576  fdd1				  -	      .byte	#17
+   1577  fdd1					      ENDIF
+   1578  fdd1
+   1579  fdd1				   beat_pitch
+   1580  fdd1		       1e		      .byte.b	#30
+   1581  fdd2		       1e		      .byte.b	#30
+   1582  fdd3		       00		      .byte.b	#0
+   1583  fdd4		       1e		      .byte.b	#30
+   1584  fdd5		       00		      .byte.b	#0
+   1585  fdd6		       1e		      .byte.b	#30
+   1586  fdd7		       00		      .byte.b	#0
+   1587  fdd8		       1e		      .byte.b	#30
+   1588  fdd9
+   1589  fdd9				   beat_type
+   1590  fdd9		       0f		      .byte.b	#15
+   1591  fdda		       0f		      .byte.b	#15
+   1592  fddb		       08		      .byte.b	#8
+   1593  fddc		       0f		      .byte.b	#15
+   1594  fddd		       00		      .byte.b	#0
+   1595  fdde		       0f		      .byte.b	#15
+   1596  fddf		       08		      .byte.b	#8
+   1597  fde0		       0f		      .byte.b	#15
+   1598  fde1							;--------------------------------------
+   1599  fe00					      ORG	$FE00
+   1600  fe00				   mapmapgfx
+   1601  fe00							;here are stored the different mapmapgrafix. I used a python script to generate them all... with this ordening, impossible to do it by hand
+   1602  fe00							;the magic order as they end on screen is this:
+   1603  fe00							; ___bit____1_____2____3__4____5_____6____7__8
+   1604  fe00							; byte 1: 38&48 37&47	18 17 14&15 13&16 11 12
+   1605  fe00							; byte 2: 34&35 33&36	28 27 24&25 23&26 21 22
+   1606  fe00							; byte 3: 44&45 43&46	58 57 54&55 53&56 51 52
+   1607  fe00							; byte 4: 31&41 32&42	68 67 64&65 63&66 61 62
+   1608  fe00							;...where the numbers represent the position that bit will end on the screen
+   1609  fe00
+   1610  fe00							;I generated them with the extra/makemaptile.py tool.
+   1611  fe00
+   1612  fe00							;........;
+   1613  fe00							;........;
+   1614  fe00							;........;
+   1615  fe00							;........;
+   1616  fe00							;........;
+   1617  fe00							;........;
+   1618  fe00		       00		      .byte.b	#%00000000
+   1619  fe01		       00		      .byte.b	#%00000000
+   1620  fe02		       00		      .byte.b	#%00000000
+   1621  fe03		       00		      .byte.b	#%00000000
+   1622  fe04
+   1623  fe04							;###..###;
+   1624  fe04							;##....##;
+   1625  fe04							;...##...;
+   1626  fe04							;..####..;
+   1627  fe04							;#......#;
+   1628  fe04							;###..###;
+   1629  fe04		       37		      .byte.b	#%00110111
+   1630  fe05		       e2		      .byte.b	#%11100010
+   1631  fe06		       b3		      .byte.b	#%10110011
+   1632  fe07		       37		      .byte.b	#%00110111
+   1633  fe08
+   1634  fe08							;###..###;
+   1635  fe08							;##....##;
+   1636  fe08							;#......#;
+   1637  fe08							;#......#;
+   1638  fe08							;##....##;
+   1639  fe08							;###..###;
+   1640  fe08		       b7		      .byte.b	#%10110111
+   1641  fe09		       33		      .byte.b	#%00110011
+   1642  fe0a		       33		      .byte.b	#%00110011
+   1643  fe0b		       b7		      .byte.b	#%10110111
+   1644  fe0c
+   1645  fe0c							;########;
+   1646  fe0c							;#..##..#;
+   1647  fe0c							;........;
+   1648  fe0c							;........;
+   1649  fe0c							;#..##..#;
+   1650  fe0c							;########;
+   1651  fe0c		       3f		      .byte.b	#%00111111
+   1652  fe0d		       2a		      .byte.b	#%00101010
+   1653  fe0e		       2a		      .byte.b	#%00101010
+   1654  fe0f		       3f		      .byte.b	#%00111111
+   1655  fe10
+   1656  fe10							;########;
+   1657  fe10							;##....##;
+   1658  fe10							;#..##...;
+   1659  fe10							;#.####..;
+   1660  fe10							;#......#;
+   1661  fe10							;###..###;
+   1662  fe10		       37		      .byte.b	#%00110111
+   1663  fe11		       e2		      .byte.b	#%11100010
+   1664  fe12		       b3		      .byte.b	#%10110011
+   1665  fe13		       bf		      .byte.b	#%10111111
+   1666  fe14
+   1667  fe14							;########;
+   1668  fe14							;#..##..#;
+   1669  fe14							;......##;
+   1670  fe14							;......##;
+   1671  fe14							;##....##;
+   1672  fe14							;###..###;
+   1673  fe14		       f7		      .byte.b	#%11110111
+   1674  fe15		       33		      .byte.b	#%00110011
+   1675  fe16		       2a		      .byte.b	#%00101010
+   1676  fe17		       3f		      .byte.b	#%00111111
+   1677  fe18
+   1678  fe18							;###..###;
+   1679  fe18							;##....##;
+   1680  fe18							;..#..###;
+   1681  fe18							;......##;
+   1682  fe18							;###..###;
+   1683  fe18							;########;
+   1684  fe18		       ff		      .byte.b	#%11111111
+   1685  fe19		       37		      .byte.b	#%00110111
+   1686  fe1a		       73		      .byte.b	#%01110011
+   1687  fe1b		       37		      .byte.b	#%00110111
+   1688  fe1c
+   1689  fe1c							;###..###;
+   1690  fe1c							;#.....##;
+   1691  fe1c							;#.####..;
+   1692  fe1c							;#..##...;
+   1693  fe1c							;##....##;
+   1694  fe1c							;########;
+   1695  fe1c		       3f		      .byte.b	#%00111111
+   1696  fe1d		       b3		      .byte.b	#%10110011
+   1697  fe1e		       f2		      .byte.b	#%11110010
+   1698  fe1f		       b7		      .byte.b	#%10110111
+   1699  fe20
+   1700  fe20							;########;
+   1701  fe20							;#..##..#;
+   1702  fe20							;........;
+   1703  fe20							;........;
+   1704  fe20							;.......#;
+   1705  fe20							;......##;
+   1706  fe20		       30		      .byte.b	#%00110000
+   1707  fe21		       20		      .byte.b	#%00100000
+   1708  fe22		       2a		      .byte.b	#%00101010
+   1709  fe23		       3f		      .byte.b	#%00111111
+   1710  fe24
+   1711  fe24							;###..###;
+   1712  fe24							;##....##;
+   1713  fe24							;##......;
+   1714  fe24							;###..#..;
+   1715  fe24							;###..#..;
+   1716  fe24							;##......;
+   1717  fe24		       03		      .byte.b	#%00000011
+   1718  fe25		       47		      .byte.b	#%01000111
+   1719  fe26		       33		      .byte.b	#%00110011
+   1720  fe27		       f7		      .byte.b	#%11110111
+   1721  fe28
+   1722  fe28							;##......;
+   1723  fe28							;###..#..;
+   1724  fe28							;..#..##.;
+   1725  fe28							;......#.;
+   1726  fe28							;###..###;
+   1727  fe28							;########;
+   1728  fe28		       7f		      .byte.b	#%01111111
+   1729  fe29		       37		      .byte.b	#%00110111
+   1730  fe2a		       47		      .byte.b	#%01000111
+   1731  fe2b		       03		      .byte.b	#%00000011
+   1732  fe2c
+   1733  fe2c							;......##;
+   1734  fe2c							;..#..###;
+   1735  fe2c							;.##..###;
+   1736  fe2c							;.#....##;
+   1737  fe2c							;##....##;
+   1738  fe2c							;###..###;
+   1739  fe2c		       f7		      .byte.b	#%11110111
+   1740  fe2d		       33		      .byte.b	#%00110011
+   1741  fe2e		       74		      .byte.b	#%01110100
+   1742  fe2f		       70		      .byte.b	#%01110000
+   1743  fe30
+   1744  fe30							;########;
+   1745  fe30							;##....##;
+   1746  fe30							;...##...;
+   1747  fe30							;........;
+   1748  fe30							;#......#;
+   1749  fe30							;###..###;
+   1750  fe30		       37		      .byte.b	#%00110111
+   1751  fe31		       22		      .byte.b	#%00100010
+   1752  fe32		       b3		      .byte.b	#%10110011
+   1753  fe33		       3f		      .byte.b	#%00111111
+   1754  fe34
+   1755  fe34							;###..###;
+   1756  fe34							;##....##;
+   1757  fe34							;......##;
+   1758  fe34							;..#..###;
+   1759  fe34							;###..###;
+   1760  fe34							;###..###;
+   1761  fe34		       f7		      .byte.b	#%11110111
+   1762  fe35		       77		      .byte.b	#%01110111
+   1763  fe36		       33		      .byte.b	#%00110011
+   1764  fe37		       37		      .byte.b	#%00110111
+   1765  fe38
+   1766  fe38							;###..###;
+   1767  fe38							;#......#;
+   1768  fe38							;........;
+   1769  fe38							;..####..;
+   1770  fe38							;########;
+   1771  fe38							;########;
+   1772  fe38		       3f		      .byte.b	#%00111111
+   1773  fe39		       ff		      .byte.b	#%11111111
+   1774  fe3a		       22		      .byte.b	#%00100010
+   1775  fe3b		       37		      .byte.b	#%00110111
+   1776  fe3c
+   1777  fe3c							;###..###;
+   1778  fe3c							;#......#;
+   1779  fe3c							;#.####..;
+   1780  fe3c							;#..##...;
+   1781  fe3c							;##.....#;
+   1782  fe3c							;###..###;
+   1783  fe3c		       37		      .byte.b	#%00110111
+   1784  fe3d		       a3		      .byte.b	#%10100011
+   1785  fe3e		       e2		      .byte.b	#%11100010
+   1786  fe3f		       b7		      .byte.b	#%10110111
+   1787  fe40
+   1788  fe40							;########;
+   1789  fe40							;#..##..#;
+   1790  fe40							;........;
+   1791  fe40							;........;
+   1792  fe40							;........;
+   1793  fe40							;........;
+   1794  fe40		       00		      .byte.b	#%00000000
+   1795  fe41		       00		      .byte.b	#%00000000
+   1796  fe42		       2a		      .byte.b	#%00101010
+   1797  fe43		       3f		      .byte.b	#%00111111
+   1798  fe44
+   1799  fe44							;......##;
+   1800  fe44							;.......#;
+   1801  fe44							;.#.....#;
+   1802  fe44							;.##..#.#;
+   1803  fe44							;......##;
+   1804  fe44							;......##;
+   1805  fe44		       b0		      .byte.b	#%10110000
+   1806  fe45		       70		      .byte.b	#%01110000
+   1807  fe46		       20		      .byte.b	#%00100000
+   1808  fe47		       70		      .byte.b	#%01110000
+   1809  fe48
+   1810  fe48							;........;
+   1811  fe48							;........;
+   1812  fe48							;........;
+   1813  fe48							;..#..#..;
+   1814  fe48							;#..##..#;
+   1815  fe48							;########;
+   1816  fe48		       3f		      .byte.b	#%00111111
+   1817  fe49		       6a		      .byte.b	#%01101010
+   1818  fe4a		       00		      .byte.b	#%00000000
+   1819  fe4b		       00		      .byte.b	#%00000000
+   1820  fe4c
+   1821  fe4c							;##......;
+   1822  fe4c							;#.......;
+   1823  fe4c							;#.......;
+   1824  fe4c							;#.#..#..;
+   1825  fe4c							;##......;
+   1826  fe4c							;##......;
+   1827  fe4c		       03		      .byte.b	#%00000011
+   1828  fe4d		       43		      .byte.b	#%01000011
+   1829  fe4e		       02		      .byte.b	#%00000010
+   1830  fe4f		       83		      .byte.b	#%10000011
+   1831  fe50
+   1832  fe50							;########;
+   1833  fe50							;########;
+   1834  fe50							;###..#..;
+   1835  fe50							;##......;
+   1836  fe50							;#.......;
+   1837  fe50							;##......;
+   1838  fe50		       03		      .byte.b	#%00000011
+   1839  fe51		       02		      .byte.b	#%00000010
+   1840  fe52		       7f		      .byte.b	#%01111111
+   1841  fe53		       ff		      .byte.b	#%11111111
+   1842  fe54
+   1843  fe54							;########;
+   1844  fe54							;###..###;
+   1845  fe54							;......##;
+   1846  fe54							;......##;
+   1847  fe54							;..#..###;
+   1848  fe54							;......##;
+   1849  fe54		       f0		      .byte.b	#%11110000
+   1850  fe55		       34		      .byte.b	#%00110100
+   1851  fe56		       37		      .byte.b	#%00110111
+   1852  fe57		       3f		      .byte.b	#%00111111
+   1853  fe58
+   1854  fe58							;......##;
+   1855  fe58							;.......#;
+   1856  fe58							;......##;
+   1857  fe58							;......##;
+   1858  fe58							;#..##..#;
+   1859  fe58							;########;
+   1860  fe58		       ff		      .byte.b	#%11111111
+   1861  fe59		       2a		      .byte.b	#%00101010
+   1862  fe5a		       20		      .byte.b	#%00100000
+   1863  fe5b		       30		      .byte.b	#%00110000
+   1864  fe5c
+   1865  fe5c							;##......;
+   1866  fe5c							;##......;
+   1867  fe5c							;#.....#.;
+   1868  fe5c							;#..##.#.;
+   1869  fe5c							;########;
+   1870  fe5c							;########;
+   1871  fe5c		       7f		      .byte.b	#%01111111
+   1872  fe5d		       bf		      .byte.b	#%10111111
+   1873  fe5e		       03		      .byte.b	#%00000011
+   1874  fe5f		       83		      .byte.b	#%10000011
+   1875  fe60
+   1876  fe60							;##......;
+   1877  fe60							;##......;
+   1878  fe60							;.##..#..;
+   1879  fe60							;.##..#..;
+   1880  fe60							;........;
+   1881  fe60							;........;
+   1882  fe60		       00		      .byte.b	#%00000000
+   1883  fe61		       40		      .byte.b	#%01000000
+   1884  fe62		       43		      .byte.b	#%01000011
+   1885  fe63		       43		      .byte.b	#%01000011
+   1886  fe64
+   1887  fe64							;......##;
+   1888  fe64							;.......#;
+   1889  fe64							;........;
+   1890  fe64							;........;
+   1891  fe64							;........;
+   1892  fe64							;........;
+   1893  fe64		       00		      .byte.b	#%00000000
+   1894  fe65		       00		      .byte.b	#%00000000
+   1895  fe66		       20		      .byte.b	#%00100000
+   1896  fe67		       30		      .byte.b	#%00110000
+   1897  fe68
+   1898  fe68							;........;
+   1899  fe68							;........;
+   1900  fe68							;........;
+   1901  fe68							;........;
+   1902  fe68							;..#..###;
+   1903  fe68							;......##;
+   1904  fe68		       30		      .byte.b	#%00110000
+   1905  fe69		       34		      .byte.b	#%00110100
+   1906  fe6a		       00		      .byte.b	#%00000000
+   1907  fe6b		       00		      .byte.b	#%00000000
+   1908  fe6c
+   1909  fe6c							;........;
+   1910  fe6c							;........;
+   1911  fe6c							;........;
+   1912  fe6c							;..#..#..;
+   1913  fe6c							;#.......;
+   1914  fe6c							;##......;
+   1915  fe6c		       03		      .byte.b	#%00000011
+   1916  fe6d		       42		      .byte.b	#%01000010
+   1917  fe6e		       00		      .byte.b	#%00000000
+   1918  fe6f		       00		      .byte.b	#%00000000
+   1919  fe70
+   1920  fe70							;###..###;
+   1921  fe70							;###..###;
+   1922  fe70							;.#....#.;
+   1923  fe70							;.#....#.;
+   1924  fe70							;........;
+   1925  fe70							;........;
+   1926  fe70		       40		      .byte.b	#%01000000
+   1927  fe71		       00		      .byte.b	#%00000000
+   1928  fe72		       37		      .byte.b	#%00110111
+   1929  fe73		       77		      .byte.b	#%01110111
+   1930  fe74
+   1931  fe74							;......##;
+   1932  fe74							;..#..#.#;
+   1933  fe74							;........;
+   1934  fe74							;........;
+   1935  fe74							;..#..#.#;
+   1936  fe74							;......##;
+   1937  fe74		       30		      .byte.b	#%00110000
+   1938  fe75		       24		      .byte.b	#%00100100
+   1939  fe76		       24		      .byte.b	#%00100100
+   1940  fe77		       30		      .byte.b	#%00110000
+   1941  fe78
+   1942  fe78							;........;
+   1943  fe78							;........;
+   1944  fe78							;...##...;
+   1945  fe78							;..####..;
+   1946  fe78							;#.....##;
+   1947  fe78							;###..###;
+   1948  fe78		       37		      .byte.b	#%00110111
+   1949  fe79		       f2		      .byte.b	#%11110010
+   1950  fe7a		       80		      .byte.b	#%10000000
+   1951  fe7b		       00		      .byte.b	#%00000000
+   1952  fe7c
+   1953  fe7c							;##......;
+   1954  fe7c							;#.......;
+   1955  fe7c							;......#.;
+   1956  fe7c							;..#..##.;
+   1957  fe7c							;###..#..;
+   1958  fe7c							;##......;
+   1959  fe7c		       43		      .byte.b	#%01000011
+   1960  fe7d		       47		      .byte.b	#%01000111
+   1961  fe7e		       02		      .byte.b	#%00000010
+   1962  fe7f		       03		      .byte.b	#%00000011
+   1963  fe80							;of course, i made them, so don't expect wonders... but they are good enough for such a simple game
+   1964  fe80
+   1965  fe80							;--------------------------------------
+   1966  fe80				   mapmap
+   1967  fe80							; here is stored the maptilemap
+   1968  fe80		       14 08 0a 12*	      .byte.b	$14,$08,$0A,$12,$1B,$19,$08,$05,$54,$10,$30,$35,$27,$2D,$24,$2D
+   1969  fe90		       17 16 64 65*	      .byte.b	$17,$16,$64,$65,$17,$12,$0B,$02,$57,$1E,$1B,$39,$28,$2D,$2F,$26
+   1970  fea0		       64 63 6d 67*	      .byte.b	$64,$63,$6D,$67,$63,$65,$07,$0D,$44,$0E,$1F,$3A,$36,$2F,$26,$64
+   1971  feb0		       6e 63 6e 65*	      .byte.b	$6E,$63,$6E,$65,$54,$7C,$08,$0D,$47,$05,$17,$36,$24,$2D,$64,$66
+   1972  fec0		       74 68 63 6d*	      .byte.b	$74,$68,$63,$6D,$57,$1E,$16,$07,$43,$0E,$23,$25,$22,$29,$7C,$35
+   1973  fed0		       77 76 64 66*	      .byte.b	$77,$76,$64,$66,$54,$1C,$08,$03,$43,$23,$25,$2F,$2D,$37,$3E,$36
+   1974  fee0		       34 35 67 65*	      .byte.b	$34,$35,$67,$65,$57,$52,$56,$24,$25,$24,$21,$2D,$27,$2C,$2D,$24
+   1975  fef0		       2a 36 54 7c*	      .byte.b	$2A,$36,$54,$7C,$50,$48,$23,$26,$27,$2E,$2E,$2E,$25,$2F,$26,$22
+   1976  ff00							;hand-drawn and hand-converted by me. Nothing fancy there...
+   1977  ff00							;--------------------------------------
+   1978  ff00					      ORG	$FF00
+   1979  ff00							;Here, finally, are stored the tiles... if you think they are ugly, well... it's up to you! I tried to do something good, but again, i'm not a professionnal pixel artist...
+   1980  ff00				   emptytile		;the representation of something not there...
+   1981  ff00		       00		      .byte.b	#%00000000
+   1982  ff01		       00		      .byte.b	#%00000000
+   1983  ff02		       00		      .byte.b	#%00000000
+   1984  ff03		       00		      .byte.b	#%00000000
+   1985  ff04		       00		      .byte.b	#%00000000
+   1986  ff05		       00		      .byte.b	#%00000000
+   1987  ff06				   bgmountain		;note this tile is 10 height, so i put it in the half of the others. Please let it's first 2 bytes remain 0...
+   1988  ff06		       00		      .byte.b	#%00000000
+   1989  ff07		       00		      .byte.b	#%00000000
+   1990  ff08
+   1991  ff08		       80		      .byte.b	#%10000000
+   1992  ff09		       c0		      .byte.b	#%11000000
+   1993  ff0a		       e0		      .byte.b	#%11100000
+   1994  ff0b		       f0		      .byte.b	#%11110000
+   1995  ff0c		       f8		      .byte.b	#%11111000
+   1996  ff0d		       fc		      .byte.b	#%11111100
+   1997  ff0e		       fe		      .byte.b	#%11111110
+   1998  ff0f		       ff		      .byte.b	#%11111111
+   1999  ff10					      ORG	$FF10
+   2000  ff10				   playerside		;the side of the player
+   2001  ff10		       63		      .byte.b	#%01100011
+   2002  ff11		       36		      .byte.b	#%00110110
+   2003  ff12		       9c		      .byte.b	#%10011100
+   2004  ff13		       fc		      .byte.b	#%11111100
+   2005  ff14		       9c		      .byte.b	#%10011100
+   2006  ff15		       2e		      .byte.b	#%00101110
+   2007  ff16		       7f		      .byte.b	#%01111111
+   2008  ff17		       3e		      .byte.b	#%00111110
+   2009  ff18
+   2010  ff18				  -	      IF	COMPILE_VERSION = NTSC
+   2011  ff18				  -	      .byte	#$00
+   2012  ff18				  -	      .byte	#$02
+   2013  ff18				  -	      .byte	#$08
+   2014  ff18				  -	      .byte	#$06
+   2015  ff18				  -	      .byte	#$08
+   2016  ff18				  -	      .byte	#$FC
+   2017  ff18				  -	      .byte	#$04
+   2018  ff18				  -	      .byte	#$02
+   2019  ff18					      ELSE
+   2020  ff18		       00		      .byte.b	#$00
+   2021  ff19		       02		      .byte.b	#$02
+   2022  ff1a		       08		      .byte.b	#$08
+   2023  ff1b		       06		      .byte.b	#$06
+   2024  ff1c		       08		      .byte.b	#$08
+   2025  ff1d		       2c		      .byte.b	#$2C
+   2026  ff1e		       04		      .byte.b	#$04
+   2027  ff1f		       02		      .byte.b	#$02
+   2028  ff20					      ENDIF
+   2029  ff20					      ORG	$FF20
+   2030  ff20				   playerfront		;the front of the player
+   2031  ff20		       63		      .byte.b	#%01100011
+   2032  ff21		       36		      .byte.b	#%00110110
+   2033  ff22		       9c		      .byte.b	#%10011100
+   2034  ff23		       ff		      .byte.b	#%11111111
+   2035  ff24		       9c		      .byte.b	#%10011100
+   2036  ff25		       2a		      .byte.b	#%00101010
+   2037  ff26		       7f		      .byte.b	#%01111111
+   2038  ff27		       3e		      .byte.b	#%00111110
+   2039  ff28
+   2040  ff28				   playerback		;the back of the player	(the last 2 images use the same palette as the side of the player. Stop the wasting of bytes!)
+   2041  ff28		       c6		      .byte.b	#%11000110
+   2042  ff29		       6c		      .byte.b	#%01101100
+   2043  ff2a		       39		      .byte.b	#%00111001
+   2044  ff2b		       ff		      .byte.b	#%11111111
+   2045  ff2c		       39		      .byte.b	#%00111001
+   2046  ff2d		       7c		      .byte.b	#%01111100
+   2047  ff2e		       fe		      .byte.b	#%11111110
+   2048  ff2f		       7c		      .byte.b	#%01111100
+   2049  ff40					      ORG	$FF40
+   2050  ff40				   monster		;a first monster. It looks like an alien from space invaders...
+   2051  ff40		       00		      .byte.b	#%00000000
+   2052  ff41		       42		      .byte.b	#%01000010
+   2053  ff42		       24		      .byte.b	#%00100100
+   2054  ff43		       bd		      .byte.b	#%10111101
+   2055  ff44		       5a		      .byte.b	#%01011010
+   2056  ff45		       3c		      .byte.b	#%00111100
+   2057  ff46		       42		      .byte.b	#%01000010
+   2058  ff47		       00		      .byte.b	#%00000000
+   2059  ff48
+   2060  ff48				  -	      IF	COMPILE_VERSION = NTSC
+   2061  ff48				  -	      .byte	#$40
+   2062  ff48				  -	      .byte	#$46
+   2063  ff48				  -	      .byte	#$44
+   2064  ff48				  -	      .byte	#$42
+   2065  ff48				  -	      .byte	#$40
+   2066  ff48				  -	      .byte	#$42
+   2067  ff48				  -	      .byte	#$44
+   2068  ff48				  -	      .byte	#$42
+   2069  ff48					      ELSE
+   2070  ff48		       60		      .byte.b	#$60
+   2071  ff49		       66		      .byte.b	#$66
+   2072  ff4a		       64		      .byte.b	#$64
+   2073  ff4b		       62		      .byte.b	#$62
+   2074  ff4c		       60		      .byte.b	#$60
+   2075  ff4d		       62		      .byte.b	#$62
+   2076  ff4e		       64		      .byte.b	#$64
+   2077  ff4f		       62		      .byte.b	#$62
+   2078  ff50					      ENDIF
+   2079  ff50
+   2080  ff50				   grolem		;A second monster... perfect for mountains!
+   2081  ff50		       00		      .byte.b	#%00000000
+   2082  ff51		       24		      .byte.b	#%00100100
+   2083  ff52		       bd		      .byte.b	#%10111101
+   2084  ff53		       ff		      .byte.b	#%11111111
+   2085  ff54		       db		      .byte.b	#%11011011
+   2086  ff55		       7e		      .byte.b	#%01111110
+   2087  ff56		       3c		      .byte.b	#%00111100
+   2088  ff57		       00		      .byte.b	#%00000000
+   2089  ff58
+   2090  ff58				  -	      IF	COMPILE_VERSION = NTSC
+   2091  ff58				  -	      .byte	#$F0
+   2092  ff58				  -	      .byte	#$F6
+   2093  ff58				  -	      .byte	#$F4
+   2094  ff58				  -	      .byte	#$F2
+   2095  ff58				  -	      .byte	#$F0
+   2096  ff58				  -	      .byte	#$F2
+   2097  ff58				  -	      .byte	#$F4
+   2098  ff58				  -	      .byte	#$F2
+   2099  ff58					      ELSE
+   2100  ff58		       20		      .byte.b	#$20
+   2101  ff59		       26		      .byte.b	#$26
+   2102  ff5a		       24		      .byte.b	#$24
+   2103  ff5b		       22		      .byte.b	#$22
+   2104  ff5c		       20		      .byte.b	#$20
+   2105  ff5d		       22		      .byte.b	#$22
+   2106  ff5e		       24		      .byte.b	#$24
+   2107  ff5f		       22		      .byte.b	#$22
+   2108  ff60					      ENDIF
+   2109  ff60
+   2110  ff60				   squirl		;A third monster... there are some tentacles out there!
+   2111  ff60		       00		      .byte.b	#%00000000
+   2112  ff61		       66		      .byte.b	#%01100110
+   2113  ff62		       24		      .byte.b	#%00100100
+   2114  ff63		       ff		      .byte.b	#%11111111
+   2115  ff64		       5a		      .byte.b	#%01011010
+   2116  ff65		       7e		      .byte.b	#%01111110
+   2117  ff66		       3c		      .byte.b	#%00111100
+   2118  ff67		       00		      .byte.b	#%00000000
+   2119  ff68
+   2120  ff68				  -	      IF	COMPILE_VERSION = NTSC
+   2121  ff68				  -	      .byte	#$A0
+   2122  ff68				  -	      .byte	#$A6
+   2123  ff68				  -	      .byte	#$A4
+   2124  ff68				  -	      .byte	#$A2
+   2125  ff68				  -	      .byte	#$A0
+   2126  ff68				  -	      .byte	#$A2
+   2127  ff68				  -	      .byte	#$A4
+   2128  ff68				  -	      .byte	#$A2
+   2129  ff68					      ELSE
+   2130  ff68		       90		      .byte.b	#$90
+   2131  ff69		       96		      .byte.b	#$96
+   2132  ff6a		       94		      .byte.b	#$94
+   2133  ff6b		       92		      .byte.b	#$92
+   2134  ff6c		       90		      .byte.b	#$90
+   2135  ff6d		       92		      .byte.b	#$92
+   2136  ff6e		       94		      .byte.b	#$94
+   2137  ff6f		       92		      .byte.b	#$92
+   2138  ff70					      ENDIF
+   2139  ff70
+   2140  ff70				   skeleton		;and the third one... seems hard to beat
+   2141  ff70		       00		      .byte.b	#%00000000
+   2142  ff71		       c3		      .byte.b	#%11000011
+   2143  ff72		       99		      .byte.b	#%10011001
+   2144  ff73		       18		      .byte.b	#%00011000
+   2145  ff74		       7e		      .byte.b	#%01111110
+   2146  ff75		       99		      .byte.b	#%10011001
+   2147  ff76		       7e		      .byte.b	#%01111110
+   2148  ff77		       00		      .byte.b	#%00000000
+   2149  ff78
+   2150  ff78		       00		      .byte.b	#$00
+   2151  ff79		       06		      .byte.b	#$06
+   2152  ff7a		       04		      .byte.b	#$04
+   2153  ff7b		       02		      .byte.b	#$02
+   2154  ff7c		       00		      .byte.b	#$00
+   2155  ff7d		       02		      .byte.b	#$02
+   2156  ff7e		       04		      .byte.b	#$04
+   2157  ff7f		       02		      .byte.b	#$02
+   2158  ff80					      ORG	$FF80
+   2159  ff80				   potion		;a potion
+   2160  ff80		       00		      .byte.b	#%00000000
+   2161  ff81		       7c		      .byte.b	#%01111100
+   2162  ff82		       fe		      .byte.b	#%11111110
+   2163  ff83		       de		      .byte.b	#%11011110
+   2164  ff84		       7c		      .byte.b	#%01111100
+   2165  ff85		       10		      .byte.b	#%00010000
+   2166  ff86		       38		      .byte.b	#%00111000
+   2167  ff87		       00		      .byte.b	#%00000000
+   2168  ff88
+   2169  ff88				  -	      IF	COMPILE_VERSION = NTSC
+   2170  ff88				  -	      .byte	#$32
+   2171  ff88				  -	      .byte	#$62
+   2172  ff88				  -	      .byte	#$44
+   2173  ff88				  -	      .byte	#$56
+   2174  ff88				  -	      .byte	#$72
+   2175  ff88				  -	      .byte	#$82
+   2176  ff88				  -	      .byte	#$F4
+   2177  ff88				  -	      .byte	#$F4
+   2178  ff88					      ELSE
+   2179  ff88		       62		      .byte.b	#$62
+   2180  ff89		       a4		      .byte.b	#$A4
+   2181  ff8a		       64		      .byte.b	#$64
+   2182  ff8b		       86		      .byte.b	#$86
+   2183  ff8c		       c2		      .byte.b	#$C2
+   2184  ff8d		       d2		      .byte.b	#$D2
+   2185  ff8e		       44		      .byte.b	#$44
+   2186  ff8f		       44		      .byte.b	#$44
+   2187  ff90					      ENDIF
+   2188  ff90					      ORG	$FF90
+   2189  ff90				   whirl		;a... whirl?
+   2190  ff90		       00		      .byte.b	#%00000000
+   2191  ff91		       40		      .byte.b	#%01000000
+   2192  ff92		       9c		      .byte.b	#%10011100
+   2193  ff93		       a3		      .byte.b	#%10100011
+   2194  ff94		       99		      .byte.b	#%10011001
+   2195  ff95		       42		      .byte.b	#%01000010
+   2196  ff96		       3c		      .byte.b	#%00111100
+   2197  ff97		       00		      .byte.b	#%00000000
+   2198  ff98
+   2199  ff98				  -	      IF	COMPILE_VERSION = NTSC
+   2200  ff98				  -	      .byte	#$D0
+   2201  ff98				  -	      .byte	#$C2
+   2202  ff98				  -	      .byte	#$B4
+   2203  ff98				  -	      .byte	#$A6
+   2204  ff98				  -	      .byte	#$78
+   2205  ff98				  -	      .byte	#$6A
+   2206  ff98				  -	      .byte	#$5C
+   2207  ff98				  -	      .byte	#$4E
+   2208  ff98					      ELSE
+   2209  ff98		       a0		      .byte.b	#$A0
+   2210  ff99		       82		      .byte.b	#$82
+   2211  ff9a		       64		      .byte.b	#$64
+   2212  ff9b		       46		      .byte.b	#$46
+   2213  ff9c		       36		      .byte.b	#$36
+   2214  ff9d		       54		      .byte.b	#$54
+   2215  ff9e		       72		      .byte.b	#$72
+   2216  ff9f		       90		      .byte.b	#$90
+   2217  ffa0					      ENDIF
+   2218  ffa0					      ORG	$FFA0
+   2219  ffa0				   diamond		;this is still named diamond for historical reasons. It is what the player search
+   2220  ffa0		       00		      .byte.b	#%00000000
+   2221  ffa1		       c3		      .byte.b	#%11000011
+   2222  ffa2		       db		      .byte.b	#%11011011
+   2223  ffa3		       db		      .byte.b	#%11011011
+   2224  ffa4		       7e		      .byte.b	#%01111110
+   2225  ffa5		       3c		      .byte.b	#%00111100
+   2226  ffa6		       18		      .byte.b	#%00011000
+   2227  ffa7		       00		      .byte.b	#%00000000
+   2228  ffa8
+   2229  ffa8		       80		      .byte.b	#$80
+   2230  ffa9		       80		      .byte.b	#$80
+   2231  ffaa		       a2		      .byte.b	#$A2
+   2232  ffab		       96		      .byte.b	#$96
+   2233  ffac		       ba		      .byte.b	#$BA
+   2234  ffad		       a8		      .byte.b	#$A8
+   2235  ffae		       a2		      .byte.b	#$A2
+   2236  ffaf		       a2		      .byte.b	#$A2
+   2237  ffb0
+   2238  ffc0					      ORG	$FFC0
+   2239  ffc0				   forest		;the tile for the forest. A pretty cool pinetree
+   2240  ffc0		       00		      .byte.b	#%00000000
+   2241  ffc1		       44		      .byte.b	#%01000100
+   2242  ffc2		       44		      .byte.b	#%01000100
+   2243  ffc3		       ee		      .byte.b	#%11101110
+   2244  ffc4		       44		      .byte.b	#%01000100
+   2245  ffc5		       ee		      .byte.b	#%11101110
+   2246  ffc6		       44		      .byte.b	#%01000100
+   2247  ffc7		       00		      .byte.b	#%00000000
+   2248  ffc8
+   2249  ffc8				  -	      IF	COMPILE_VERSION = NTSC
+   2250  ffc8				  -	      .byte	#$F4
+   2251  ffc8				  -	      .byte	#$F4
+   2252  ffc8				  -	      .byte	#$F4
+   2253  ffc8				  -	      .byte	#$C8
+   2254  ffc8				  -	      .byte	#$D2
+   2255  ffc8				  -	      .byte	#$C8
+   2256  ffc8				  -	      .byte	#$D2
+   2257  ffc8				  -	      .byte	#$D2
+   2258  ffc8					      ELSE
+   2259  ffc8		       44		      .byte.b	#$44
+   2260  ffc9		       44		      .byte.b	#$44
+   2261  ffca		       44		      .byte.b	#$44
+   2262  ffcb		       58		      .byte.b	#$58
+   2263  ffcc		       52		      .byte.b	#$52
+   2264  ffcd		       58		      .byte.b	#$58
+   2265  ffce		       52		      .byte.b	#$52
+   2266  ffcf		       52		      .byte.b	#$52
+   2267  ffd0					      ENDIF
+   2268  ffd0
+   2269  ffd0				   mountains		;the tile for the mountains... a rock? a mountain? i dunna...
+   2270  ffd0		       00		      .byte.b	#%00000000
+   2271  ffd1		       44		      .byte.b	#%01000100
+   2272  ffd2		       ee		      .byte.b	#%11101110
+   2273  ffd3		       ee		      .byte.b	#%11101110
+   2274  ffd4		       ee		      .byte.b	#%11101110
+   2275  ffd5		       44		      .byte.b	#%01000100
+   2276  ffd6		       44		      .byte.b	#%01000100
+   2277  ffd7		       00		      .byte.b	#%00000000
+   2278  ffd8
+   2279  ffd8				  -	      IF	COMPILE_VERSION = NTSC
+   2280  ffd8				  -	      .byte	#$F0
+   2281  ffd8				  -	      .byte	#$F0
+   2282  ffd8				  -	      .byte	#$F0
+   2283  ffd8				  -	      .byte	#$F2
+   2284  ffd8				  -	      .byte	#$F2
+   2285  ffd8				  -	      .byte	#$F4
+   2286  ffd8				  -	      .byte	#$FB
+   2287  ffd8				  -	      .byte	#$FB
+   2288  ffd8					      ELSE
+   2289  ffd8		       40		      .byte.b	#$40
+   2290  ffd9		       40		      .byte.b	#$40
+   2291  ffda		       40		      .byte.b	#$40
+   2292  ffdb		       42		      .byte.b	#$42
+   2293  ffdc		       42		      .byte.b	#$42
+   2294  ffdd		       44		      .byte.b	#$44
+   2295  ffde		       4b		      .byte.b	#$4B
+   2296  ffdf		       4b		      .byte.b	#$4B
+   2297  ffe0					      ENDIF
+   2298  ffe0
+   2299  ffe0				   sea			;this clearly is the sea... not to good drawn, but better than nothing
+   2300  ffe0		       00		      .byte.b	#%00000000
+   2301  ffe1		       cc		      .byte.b	#%11001100
+   2302  ffe2		       66		      .byte.b	#%01100110
+   2303  ffe3		       33		      .byte.b	#%00110011
+   2304  ffe4		       66		      .byte.b	#%01100110
+   2305  ffe5		       cc		      .byte.b	#%11001100
+   2306  ffe6		       66		      .byte.b	#%01100110
+   2307  ffe7		       00		      .byte.b	#%00000000
+   2308  ffe8
+   2309  ffe8				  -	      IF	COMPILE_VERSION = NTSC
+   2310  ffe8				  -	      .byte	#$8A
+   2311  ffe8				  -	      .byte	#$9A
+   2312  ffe8				  -	      .byte	#$AA
+   2313  ffe8				  -	      .byte	#$BA
+   2314  ffe8				  -	      .byte	#$AA
+   2315  ffe8				  -	      .byte	#$9A
+   2316  ffe8				  -	      .byte	#$8A
+   2317  ffe8				  -	      .byte	#$8A
+   2318  ffe8					      ELSE
+   2319  ffe8		       7a		      .byte.b	#$7A
+   2320  ffe9		       9a		      .byte.b	#$9A
+   2321  ffea		       ba		      .byte.b	#$BA
+   2322  ffeb		       da		      .byte.b	#$DA
+   2323  ffec		       ba		      .byte.b	#$BA
+   2324  ffed		       9a		      .byte.b	#$9A
+   2325  ffee		       7a		      .byte.b	#$7A
+   2326  ffef		       7a		      .byte.b	#$7A
+   2327  fff0					      ENDIF
+   2328  fff0				   dungeon		;and this is for the dungeon... because of my st*pidity, it partly overlaps with the reset vector... which works well for PAL but not too good for NTSC
+   2329  fff0		       00		      .byte.b	#%00000000
+   2330  fff1		       ee		      .byte.b	#%11101110
+   2331  fff2		       ee		      .byte.b	#%11101110
+   2332  fff3		       ee		      .byte.b	#%11101110
+   2333  fff4		       ee		      .byte.b	#%11101110
+   2334  fff5		       ee		      .byte.b	#%11101110
+   2335  fff6		       ee		      .byte.b	#%11101110
+   2336  fff7		       00		      .byte.b	#%00000000
+   2337  fff8
+   2338  fff8		       06		      .byte.b	#$06
+   2339  fff9		       06		      .byte.b	#$06
+   2340  fffa		       06		      .byte.b	#$06
+   2341  fffb		       08		      .byte.b	#$08
+   2342  fffc
+   2343  fffc
+   2344  fffc							;--------------------------------------
+   2345  fffc					      ORG	$FFFC
+   2346  fffc		       08 f8		      .word.w	Reset	; RESET
+   2347  fffe		       08		      .byte.b	#$08	;and we don't have to define the IRQ/NMI vectors, so we use what arrange us the most... grey color!
+   2348  ffff		       08		      .byte.b	#$08
+   2349  10000
+   2350  10000					       END

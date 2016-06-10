@@ -1,0 +1,252 @@
+--- Symbol List (sorted by symbol)
+AUDC0                    0015              (R )
+AUDC1                    0016              (R )
+AUDF0                    0017              (R )
+AUDF1                    0018              (R )
+AUDV0                    0019              (R )
+AUDV1                    001a              (R )
+beat_pitch               fdd1              (R )
+beat_type                fdd9              (R )
+BGcolor                  008f              (R )
+BGcolors                 fdcd              (R )
+bgmountain               ff06                  
+bottom3                  f98a              (R )
+canplayS1                00e5              (R )
+clearmon_loop            fd36              (R )
+clrmem                   f80d              (R )
+colmask                  0090              (R )
+COLUBK                   0009              (R )
+COLUP0                   0006              (R )
+COLUP1                   0007              (R )
+COLUPF                   0008              (R )
+COMPILE_SIZE             0002              (R )
+COMPILE_VERSION          0001              (R )
+CTRLPF                   000a              (R )
+CXBLPF                   0006                  
+CXCLR                    002c              (R )
+CXM0FB                   0004                  
+CXM0P                    0000                  
+CXM1FB                   0005                  
+CXM1P                    0001                  
+CXP0FB                   0002              (R )
+CXP1FB                   0003                  
+CXPPMM                   0007              (R )
+decrease_lives           fd89              (R )
+decrease_rc              fbc0              (R )
+Diam                     00d1              (R )
+DiamGfx                  00d7                  
+diamond                  ffa0                  
+DigitOnes                00d2                  
+DigitTens                00d4                  
+dont_and_1               f902              (R )
+dont_and_2               f908              (R )
+dont_and_3               f91a              (R )
+dont_and_4               f920              (R )
+dont_and_5               f92b              (R )
+dont_and_6               f931              (R )
+dont_load_monsters       fd02              (R )
+dont_load_whirl          fcef              (R )
+dont_make_bw_back        fc7a              (R )
+dont_stop_me_now         fa35              (R )
+doroomupd                00e1              (R )
+draw_bottom3             f97c              (R )
+draw_healthbar_1         f825              (R )
+draw_player              f93c              (R )
+drink_potion             fa96                  
+dungeon                  fff0                  
+emptytile                ff00                  
+ENABL                    001f                  
+ENAM0                    001d                  
+ENAM1                    001e                  
+end_decrease_lives       fda9              (R )
+end_make_bw              fc7e              (R )
+end_mon_upd              fc1e              (R )
+end_move_room_down       fb5e              (R )
+end_move_room_left       fafe              (R )
+end_move_room_right      fb26              (R )
+end_move_room_up         fb43              (R )
+end_of_load_monsters     fd31              (R )
+eoupdate_player          fa48              (R )
+eoupdate_player_far      fa9d              (R )
+fill_adr_loop            f830              (R )
+forest                   ffc0                  
+fpspeed                  00e6              (R )
+game_over                fbd6              (R )
+gameover                 fda5              (R )
+gameover_far             fa90              (R )
+gameover_resetter        fa96              (R )
+grolem                   ff50                  
+GRP0                     001b              (R )
+GRP1                     001c              (R )
+healthbar                00c0              (R )
+hit_monster              fa54              (R )
+HMBL                     0024                  
+HMCLR                    002b                  
+HMM0                     0022                  
+HMM1                     0023                  
+HMOVE                    002a                  
+HMP0                     0020                  
+HMP1                     0021                  
+INPT0                    0008                  
+INPT1                    0009                  
+INPT2                    000a                  
+INPT3                    000b                  
+INPT4                    000c              (R )
+INPT5                    000d                  
+INTIM                    0284              (R )
+kill_monster             fa76                  
+last_bar                 f879              (R )
+left_side                f891              (R )
+left_side_2              f871              (R )
+left_side_delay          f892              (R )
+left_side_delay_2        f872              (R )
+lfsr                     fdbd              (R )
+load_healthbar           f822                  
+load_monsters            fd32              (R )
+load_monsters_hot        fd41              (R )
+load_potion              fa81                  
+loadmon_loop             fd4c              (R )
+main_code                f822                  
+main_kernel              f8a7              (R )
+mapmap                   fe80              (R )
+mapmapgfx                fe00              (R )
+mapmapidx                008e              (R )
+mcmir                    009c              (R )
+mon_move_left            fc09              (R )
+mon_move_left_cancel     fc1a              (R )
+mon_move_right           fbfd                  
+mon_move_right_cancel    fc15              (R )
+mongfx                   00b8              (R )
+monlives                 00c8              (R )
+monloop                  fbe3              (R )
+monmir                   0096              (R )
+monster                  ff40                  
+monstertype              00e2              (R )
+monsterx                 00b0              (R )
+montestcol               fc21                  
+montestcol_end           fc21                  
+monupdate                fbed              (R )
+mountains                ffd0                  
+move_room_down           fba7              (R )
+move_room_left           fb65              (R )
+move_room_right          fb77              (R )
+move_room_up             fb8e              (R )
+movedown                 fb4f              (R )
+movedown_cancel          fb89              (R )
+moveleft                 faed              (R )
+moveleft_cancel          fb0c              (R )
+moveright                fb11              (R )
+moveright_cancel         fb2d              (R )
+moveup                   fb32              (R )
+moveup_cancel            fb4a              (R )
+no_beat                  fab7              (R )
+no_finish                fa69              (R )
+noeor                    fdc3              (R )
+noscore_loop             f9ff              (R )
+nothing                  00f0              (R )
+NTSC                     0000              (R )
+NUSIZ0                   0004                  
+NUSIZ1                   0005                  
+OSwait                   fc22              (R )
+p0xpos                   0089              (R )
+p0xposold                008b              (R )
+p0ypos                   0088              (R )
+p0yposold                008a              (R )
+PAL                      0001              (R )
+pass_decay_ppos          fa41              (R )
+PF0                      000d              (R )
+PF1                      000e              (R )
+pf1mirror                0081              (R )
+PF2                      000f              (R )
+pf3mirror                0083              (R )
+pgfxmir                  008d                  
+playerback               ff28                  
+playercol                009a              (R )
+playerfront              ff20                  
+playergfx                0098              (R )
+playerside               ff10                  
+position_player          f84f                  
+potion                   ff80                  
+random_pos_player        fa4c              (R )
+randomnize               fdc4              (R )
+randomnize_loop          fdc6              (R )
+randomnize_seed          fd10              (R )
+REFP0                    000b              (R )
+REFP1                    000c                  
+RESBL                    0014                  
+Reset                    f808              (R )
+reset_pos_player         fa83              (R )
+reset_x                  f973              (R )
+reset_y                  f96b              (R )
+RESM0                    0012                  
+RESM1                    0013                  
+RESMP0                   0028                  
+RESMP1                   0029                  
+RESP0                    0010              (R )
+RESP1                    0011              (R )
+restart_kernel           f84d              (R )
+right_side_delay         f8d3              (R )
+right_side_delay_2       f869              (R )
+roomidx                  00e0                  
+RSYNC                    0003                  
+Score                    00d0              (R )
+ScoreGfx                 00d6                  
+screenbyte               0080              (R )
+screentile               0094              (R )
+sea                      ffe0                  
+search_next_empty        fa96                  
+seed                     0086              (R )
+set_timecnt_0            faa0              (R )
+set_timecnt_0_far        fa51              (R )
+skeleton                 ff70                  
+Sleep12                  fa4b                  
+soft_reset               f808              (R )
+some_rts                 f890                  
+songidx                  00e4              (R )
+sound_cancel             fb07              (R )
+squirl                   ff60                  
+start_kernel             f8a3              (R )
+start_of_line_1          f8d8              (R )
+SWACNT                   0281                  
+SWBCNT                   0283                  
+SWCHA                    0280              (R )
+SWCHB                    0282              (R )
+T1024T                   0297                  
+test_col_wall            fdaa              (R )
+test_col_wall_loop       fdb0              (R )
+test_col_wall_table      fdb5              (R )
+testter                  fd51              (R )
+TIA_BASE_ADDRESS         0000              (R )
+TIA_BASE_READ_ADDRESS    0000              (R )
+TIA_BASE_WRITE_ADDRESS   0000              (R )
+tilecol                  00a0                  
+tilecolmir               009e              (R )
+tilemap                  00a8              (R )
+TIM1T                    0294                  
+TIM64T                   0296              (R )
+TIM8T                    0295                  
+timecnt                  008c              (R )
+TIMINT                   0285                  
+tmp1                     0082              (R )
+tmp2                     0084              (R )
+tmp3                     0085              (R )
+tmp4                     0087              (R )
+update_player            faa4                  
+V2K                      0002              (R )
+V4K                      0004              (R )
+vb4                      f9be              (R )
+VBLANK                   0001              (R )
+VDELBL                   0027                  
+VDELP0                   0025                  
+VDELP1                   0026                  
+VERSION_MACRO            0069                  
+VERSION_VCS              0069                  
+VerticalBlank            fd17              (R )
+VerticalBlank2           fbd9              (R )
+VerticalBlank4           fc22              (R )
+VerticalBlank4_prep      fc22              (R )
+VerticalBlank5           fc22                  
+VSYNC                    0000              (R )
+whirl                    ff90                  
+WSYNC                    0002              (R )
+--- End of Symbol List.
