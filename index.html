@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Yatba-vcs by Yvar-deGoffau</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Yatba-vcs</h1>
+      <h2 class="project-tagline">A little game I programmed for the Atari 2600 in assembly in 2k. </h2>
+      <a href="https://github.com/Yvar-deGoffau/Yatba-VCS" class="btn">View on GitHub</a>
+      <a href="https://github.com/Yvar-deGoffau/Yatba-VCS/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/Yvar-deGoffau/Yatba-VCS/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="yatba-vcs" class="anchor" href="#yatba-vcs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Yatba-VCS</h1>
+
+<p>A little game I programmed for the Atari 2600 in assembly in 2k. </p>
+
+<h2>
+<a id="playing" class="anchor" href="#playing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Playing</h2>
+
+<p>To play this game, you will need some form of Atari 2600 emulator (unless you have a real machine and a harmony cart). 
+The binaries are in ./bin/</p>
+
+<p>This game is about some guy who is lost on a planet with a lot of monsters. They have already send him a space ship to rescue him, but he don't know when it is going to land, nor where it is going to land. Maybe the space ship has already landed? Maybe it is already gone?
+ He need to find the space ship on time before the crew think he is lost forever. He hears the time tick in his head...
+ But he has also to defend himself from the different monsters that this land is rich. And the land is so large, just finding the space ship is already going to be already a challenge! Has it landed in the forest, in the mountains, at the ruins of the ancient civilisation or near the endless ocean?</p>
+
+<p>(ain't Atari games  famous for their storyline...) </p>
+
+<h2>
+<a id="building" class="anchor" href="#building" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building</h2>
+
+<p>You will need the DASM assembler to build the project. The VCS.h and Macro.h files are already included, but you might want to get the latest version of them. </p>
+
+<p>You then need to modify the code at the top of the source file to build the right version:
+    processor 6502
+    include "vcs.h"
+    include "macro.h"
+    ;--------------------------------------
+    NTSC            = 0
+    PAL             = 1
+    COMPILE_VERSION = PAL   #Modify this line to "NTSC"/"PAL" to select your TV type
+    V2K     = 2
+    V4K     = 4
+    COMPILE_SIZE    = V2K   #Modify this line to "V2K"/"V4K" to select the 2K or the 4K version
+    ;--------------------------------------</p>
+
+<p>Then use the following command:
+    dasm.exe ./src/yatba.asm -s./src/yatba_version.sym -l./src/yatba_version.lst -f3 -o./bin/yatba_version.bin
+where you replace "version" with your compiled version.</p>
+
+<p>Normally, I already supply precompiled versions in the ./bin/ folder. They should normally be working on any emulator. I don't guarantee however that it will work on the real console; I don't have the tools needed to test it. Any photos of real consoles running this game are welcome!</p>
+
+<h2>
+<a id="technical-details" class="anchor" href="#technical-details" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Technical Details</h2>
+
+<p>(maybe I'm going to put this in the wiki; but I don't have the time at the moment)
+ You might wonder how it is possible that this game crams such a map in so little memory. In fact, while omitting the music and the timer, it fits perfectly in 2048 bytes of code, without using procedural generation, and that while I'm new at this platform and I didn't do much optimisations.
+ The trick is that the game use a simple form of a tile-mapped storage &amp; kernel.
+ 1 screen, represented as 8<em>6 tile images, is stored in 4 bytes. In fact, if you look well, you will see that there are some mirroring involved. With the extra/makemaptile.py tool (needs python and pygame!), you can experience by yourself how this mirroring works. The map is then stored as bits in 32 individual positions (4 bytes</em>8 bits), where a 1 represent a tile and a 0 represent no tile.
+ There are 32 of these screens. In fact, you will often see the same screen, just with another texture!
+ To determine which screen to load for the current position, the game looks-up in another table, 16<em>8 screens large. The lower 5 bits of 1 byte in this table represents the screen to load, the upper 2 bits gives the terrain type. This eats another 128 (16</em>8) bytes.
+ This way, the game stores a 128*48 tilemap in just 256 bytes (not counting the code to load it). 
+ There are other tricks involved in displaying this map (I'm really not using this hand-crafted kernel to it's max at the moment... maybe one day I will expand the 4K version to actually fits in 4096 bytes!) but I think most of them are piece of cake to seasoned Atari programmers. You will however see that because this game is turn-based, I did implement a custom-made sprite multiplexer without Flickering nor HMOVE bars!
+ Finally, my code isn't the best; it repeats itself often, even outside the Kernel (look for the player-move code for an example; pure yuck!), and it is far from optimalised. Maybe someday I gonne fix the rough edges...</p>
+
+<p>P.S. I need to fix the Game aspect of the Game a little... for example the different monsters actually behave exactly the same! But I first need to shave some bytes off, I have none left for the 2k version.</p>
+
+<p>P.P.S: There is a lot of unused (i.e. commented) code out there... for when I have the time to finish it. What do you think of potions and warps?</p>
+
+<h2>
+<a id="licence" class="anchor" href="#licence" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Licence</h2>
+
+<p>At the moment I haven't decided yet... but fresh code is always welcome! By the way, I have no problems with getting cloned, reused code or anything the like; I won't get any money for it anyway :-P 
+ As such, credits for reused code are fine, but not mandatory.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/Yvar-deGoffau/Yatba-VCS">Yatba-vcs</a> is maintained by <a href="https://github.com/Yvar-deGoffau">Yvar-deGoffau</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
